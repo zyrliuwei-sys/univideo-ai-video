@@ -28,5 +28,4 @@ DATABASE_URL = ""
 DATABASE_PROVIDER = "postgresql"
 
 # auth
-AUTH_URL = ""
 AUTH_SECRET = ""

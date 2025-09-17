@@ -31,7 +31,7 @@ const nextConfig = {
 
 const withMDX = createMDX({
   // customise the config file path
-  configPath: "./src/core/docs/source.config.ts",
+  configPath: "./source.config.ts",
 });
 
 const withNextIntl = createNextIntlPlugin({
