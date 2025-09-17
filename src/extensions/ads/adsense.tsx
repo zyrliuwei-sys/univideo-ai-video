@@ -1,21 +1,49 @@
-export function AdsenseScript({ adsenseCode }: { adsenseCode: string }) {
-  if (!adsenseCode) {
-    return null;
-  }
+import { AdsConfigs, AdsProvider } from "@/extensions/ads";
+import Script from "next/script";
+import { ReactNode } from "react";
 
-  return (
-    <script
-      async
-      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseCode}`}
-      crossOrigin="anonymous"
-    ></script>
-  );
+/**
+ * Google adsense configs
+ */
+export interface AdsenseConfigs extends AdsConfigs {
+  adId: string;
 }
 
-export function AdsenseMeta({ adsenseCode }: { adsenseCode: string }) {
-  if (!adsenseCode) {
+/**
+ * Google adsense provider
+ * @website https://adsense.google.com/
+ */
+export class AdsenseProvider implements AdsProvider {
+  readonly name = "adsense";
+
+  configs: AdsenseConfigs;
+
+  constructor(configs: AdsenseConfigs) {
+    this.configs = configs;
+  }
+
+  getHeadScripts(): ReactNode {
+    return (
+      <Script
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${this.configs.adId}`}
+        strategy="afterInteractive"
+        async
+        crossOrigin="anonymous"
+      />
+    );
+  }
+
+  getBodyScripts(): ReactNode {
     return null;
   }
 
-  return <meta name="google-adsense-account" content={adsenseCode} />;
+  getMetaTags(): ReactNode {
+    return (
+      <meta
+        key={this.name}
+        name="google-adsense-account"
+        content={this.configs.adId}
+      />
+    );
+  }
 }

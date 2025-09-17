@@ -4,8 +4,8 @@ import { getLocale, setRequestLocale } from "next-intl/server";
 import { locales } from "@/config/locale";
 import { envConfigs } from "@/config";
 import { getConfigs } from "@/services/config";
-import { GoogleAnalytics } from "@/extensions/analytics";
-import { AdsenseMeta, AdsenseScript } from "@/extensions/ads";
+import { getAdsComponents } from "@/services/ads";
+import { getAnalyticsComponents } from "@/services/analytics";
 
 export default async function RootLayout({
   children,
@@ -23,20 +23,22 @@ export default async function RootLayout({
 
   const isProduction = process.env.NODE_ENV === "production";
 
-  // google adsense code
-  const adsenseCode = isProduction ? dbConfigs.adsense_code : "";
+  // get analytics components in production
+  const { analyticsMetaTags, analyticsHeadScripts, analyticsBodyScripts } =
+    getAnalyticsComponents(isProduction ? dbConfigs : {});
 
-  // google analytics id
-  const googleAnalyticsId = isProduction ? dbConfigs.google_analytics_id : "";
+  // get ads components in production
+  const { adsMetaTags, adsHeadScripts, adsBodyScripts } = getAdsComponents(
+    isProduction ? dbConfigs : {}
+  );
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        {adsenseCode && <AdsenseMeta adsenseCode={adsenseCode} />}
-
         <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+        {/* inject locales */}
         {locales ? (
           <>
             {locales.map((loc) => (
@@ -50,11 +52,26 @@ export default async function RootLayout({
             <link rel="alternate" hrefLang="x-default" href={appUrl} />
           </>
         ) : null}
-      </head>
-      <body>{children}</body>
 
-      {googleAnalyticsId && <GoogleAnalytics analyticsId={googleAnalyticsId} />}
-      {adsenseCode && <AdsenseScript adsenseCode={adsenseCode} />}
+        {/* inject ads meta tags */}
+        {adsMetaTags}
+        {/* inject ads head scripts */}
+        {adsHeadScripts}
+
+        {/* inject analytics meta tags */}
+        {analyticsMetaTags}
+        {/* inject analytics head scripts */}
+        {analyticsHeadScripts}
+      </head>
+      <body>
+        {children}
+
+        {/* inject ads body scripts */}
+        {adsBodyScripts}
+
+        {/* inject analytics body scripts */}
+        {analyticsBodyScripts}
+      </body>
     </html>
   );
 }

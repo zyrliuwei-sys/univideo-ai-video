@@ -1,9 +1,50 @@
-import { GoogleAnalytics as NextGoogleAnalytics } from "@next/third-parties/google";
+import { AnalyticsConfigs, AnalyticsProvider } from ".";
+import { ReactNode } from "react";
+import Script from "next/script";
 
-export function GoogleAnalytics({ analyticsId }: { analyticsId: string }) {
-  if (!analyticsId) {
-    return null;
+/**
+ * Google analytics configs
+ * @docs https://marketingplatform.google.com/about/analytics/
+ */
+export interface GoogleAnalyticsConfigs extends AnalyticsConfigs {
+  gaId: string; // google analytics id
+}
+
+/**
+ * Google analytics provider
+ * @website https://marketingplatform.google.com/about/analytics/
+ */
+export class GoogleAnalyticsProvider implements AnalyticsProvider {
+  readonly name = "google-analytics";
+
+  configs: GoogleAnalyticsConfigs;
+
+  constructor(configs: GoogleAnalyticsConfigs) {
+    this.configs = configs;
   }
 
-  return <NextGoogleAnalytics gaId={analyticsId} />;
+  getHeadScripts(): ReactNode {
+    return (
+      <>
+        {/* Google tag (gtag.js) */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${this.configs.gaId}`}
+          strategy="afterInteractive"
+          async
+        />
+        <Script
+          id={this.name}
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${this.configs.gaId}');
+            `,
+          }}
+        />
+      </>
+    );
+  }
 }

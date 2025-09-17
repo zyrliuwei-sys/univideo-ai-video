@@ -7,6 +7,8 @@ export type Config = typeof config.$inferSelect;
 export type NewConfig = typeof config.$inferInsert;
 export type UpdateConfig = Partial<Omit<NewConfig, "name">>;
 
+export type Configs = Record<string, string>;
+
 export async function saveConfigs(configs: Record<string, string>) {
   const result = await db().transaction(async (tx) => {
     const configEntries = Object.entries(configs);
@@ -37,7 +39,7 @@ export async function addConfig(newConfig: NewConfig) {
   return result;
 }
 
-export async function getConfigs() {
+export async function getConfigs(): Promise<Configs> {
   const configs: Record<string, string> = {};
 
   const result = await db().select().from(config);
@@ -52,7 +54,7 @@ export async function getConfigs() {
   return configs;
 }
 
-export async function getAllConfigs(): Promise<Record<string, string>> {
+export async function getAllConfigs(): Promise<Configs> {
   const dbConfigs = await getConfigs();
 
   const configs = {

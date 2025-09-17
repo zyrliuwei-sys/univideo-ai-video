@@ -102,6 +102,20 @@ export default async function SettingsPage({
             google_analytics_id: googleAnalyticsId as string,
           });
           break;
+        } else if (provider === "plausible") {
+          const plausibleDomain = data.get("plausible_domain") || "";
+          const plausibleSrc = data.get("plausible_src") || "";
+          await saveConfigs({
+            plausible_domain: plausibleDomain as string,
+            plausible_src: plausibleSrc as string,
+          });
+          break;
+        } else if (provider === "openpanel") {
+          const openpanelClientId = data.get("openpanel_client_id") || "";
+          await saveConfigs({
+            openpanel_client_id: openpanelClientId as string,
+          });
+          break;
         } else {
           throw new Error("invalid provider");
         }
@@ -291,6 +305,7 @@ export default async function SettingsPage({
       },
     });
   } else if (tab === "analytics") {
+    // google analytics
     forms.push({
       title: "Google Analytics",
       description: "custorm your google analytics settings",
@@ -307,6 +322,64 @@ export default async function SettingsPage({
         tab: "analytics",
         group: "analytics",
         provider: "google_analytics",
+      },
+      submit: {
+        button: {
+          title: "Save",
+        },
+        handler: handleSubmit as any,
+      },
+    });
+
+    // plausible
+    forms.push({
+      title: "Plausible",
+      description: "custorm your plausible settings",
+      fields: [
+        {
+          name: "plausible_domain",
+          type: "text",
+          title: "Plausible Domain",
+          placeholder: "shipany.site",
+        },
+        {
+          name: "plausible_src",
+          type: "url",
+          title: "Plausible Script Src",
+          placeholder: "https://plausible.io/js/script.js",
+        },
+      ],
+      data: configs,
+      passby: {
+        tab: "analytics",
+        group: "analytics",
+        provider: "plausible",
+      },
+      submit: {
+        button: {
+          title: "Save",
+        },
+        handler: handleSubmit as any,
+      },
+    });
+
+    // openpanel
+    forms.push({
+      title: "OpenPanel",
+      description: "custorm your openpanel settings",
+      fields: [
+        {
+          name: "openpanel_client_id",
+          type: "text",
+          title: "OpenPanel Client ID",
+          placeholder: "",
+        },
+      ],
+      data: configs,
+      passby: {
+        tab: "analytics",
+        group: "analytics",
+        provider: "openpanel",
       },
       submit: {
         button: {
