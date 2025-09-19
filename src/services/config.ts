@@ -57,8 +57,13 @@ export async function getAllConfigs(): Promise<Configs> {
   let dbConfigs: Configs = {};
 
   // only get configs from db in server side
-  if (typeof window === "undefined") {
-    dbConfigs = await getConfigs();
+  if (typeof window === "undefined" && envConfigs.database_url) {
+    try {
+      dbConfigs = await getConfigs();
+    } catch (e) {
+      console.log("get configs from db failed:", e);
+      dbConfigs = {};
+    }
   }
 
   const configs = {

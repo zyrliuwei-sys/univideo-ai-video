@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "@/core/i18n/navigation";
 import { Loader2 } from "lucide-react";
+import { envConfigs } from "@/config";
 
 export function SignUser({
   isScrolled,
@@ -22,6 +23,10 @@ export function SignUser({
   isScrolled?: boolean;
   signButtonSize?: "default" | "sm" | "lg" | "icon";
 }) {
+  if (!envConfigs.database_url || !envConfigs.auth_secret) {
+    return null;
+  }
+
   const { data: session, isPending } = useSession();
   const router = useRouter();
 
