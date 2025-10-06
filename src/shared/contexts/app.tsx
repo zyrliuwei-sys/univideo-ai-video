@@ -44,7 +44,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const resp = await fetch("/api/get-user-credits", {
+      const resp = await fetch("/api/user/get-user-credits", {
         method: "POST",
       });
       if (!resp.ok) {

@@ -12,8 +12,10 @@ import { Configs, getAllConfigs } from "@/shared/services/config";
 export function getPaymentService(configs: Configs) {
   const paymentManager = new PaymentManager();
 
+  const paymentProvider = configs.payment_provider;
+
   // add stripe provider
-  if (configs.stripe_secret_key && configs.stripe_publishable_key) {
+  if (paymentProvider === "stripe") {
     paymentManager.addProvider(
       new StripeProvider({
         secretKey: configs.stripe_secret_key,
@@ -23,7 +25,7 @@ export function getPaymentService(configs: Configs) {
   }
 
   // add creem provider
-  if (configs.creem_api_key) {
+  if (paymentProvider === "creem") {
     paymentManager.addProvider(
       new CreemProvider({
         apiKey: configs.creem_api_key,
@@ -33,7 +35,7 @@ export function getPaymentService(configs: Configs) {
   }
 
   // add paypal provider
-  if (configs.paypal_client_id && configs.paypal_client_secret) {
+  if (paymentProvider === "paypal") {
     paymentManager.addProvider(
       new PayPalProvider({
         clientId: configs.paypal_client_id,

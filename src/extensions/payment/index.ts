@@ -45,6 +45,7 @@ export interface PaymentProduct {
 export enum PaymentType {
   ONE_TIME = "one-time",
   SUBSCRIPTION = "subscription",
+  RENEW = "renew",
 }
 
 export enum PaymentInterval {
@@ -129,6 +130,7 @@ export interface SubscriptionInfo {
   trialPeriodDays?: number;
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
+  billingUrl?: string;
   metadata?: Record<string, any>;
 }
 

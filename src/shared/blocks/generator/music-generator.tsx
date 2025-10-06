@@ -77,7 +77,7 @@ export function MusicGenerator({ className, srOnlyTitle }: SongGeneratorProps) {
 
   // Form state
   const [customMode, setCustomMode] = useState(false);
-  const [model, setModel] = useState("V4_5");
+  const [model, setModel] = useState("V5");
   const [title, setTitle] = useState("");
   const [style, setStyle] = useState("");
   const [instrumental, setInstrumental] = useState(false);
@@ -115,7 +115,7 @@ export function MusicGenerator({ className, srOnlyTitle }: SongGeneratorProps) {
         }
       }
 
-      const response = await fetch("/api/demo/ai-music/query-task", {
+      const response = await fetch("/api/ai/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -303,18 +303,22 @@ export function MusicGenerator({ className, srOnlyTitle }: SongGeneratorProps) {
     setGenerationStartTime(Date.now()); // Set generation start time
 
     try {
-      const response = await fetch("/api/demo/ai-music/generate", {
+      const response = await fetch("/api/ai/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: prompt,
-          style: style,
-          title: title,
-          customMode: customMode,
-          instrumental: instrumental,
+          mediaType: "music",
+          provider: "kie",
           model: model,
+          prompt: prompt,
+          options: {
+            style: style,
+            title: title,
+            customMode: customMode,
+            instrumental: instrumental,
+          },
         }),
       });
 

@@ -6,19 +6,19 @@ import { Empty } from "@/shared/blocks/common";
 import {
   Credit,
   CreditStatus,
+  CreditTransactionType,
   getCredits,
   getCreditsCount,
   getRemainingCredits,
 } from "@/shared/services/credit";
-import { Button } from "@/shared/components/ui/button";
-import { Link } from "@/core/i18n/navigation";
+import { Tab } from "@/shared/types/blocks/common";
 
 export default async function CreditsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: number; pageSize?: number }>;
+  searchParams: Promise<{ page?: number; pageSize?: number; type?: string }>;
 }) {
-  const { page: pageNum, pageSize } = await searchParams;
+  const { page: pageNum, pageSize, type } = await searchParams;
   const page = pageNum || 1;
   const limit = pageSize || 20;
 
@@ -28,6 +28,7 @@ export default async function CreditsPage({
   }
 
   const total = await getCreditsCount({
+    transactionType: type as CreditTransactionType,
     userId: user.id,
     status: CreditStatus.ACTIVE,
   });
@@ -35,6 +36,7 @@ export default async function CreditsPage({
   const credits = await getCredits({
     userId: user.id,
     status: CreditStatus.ACTIVE,
+    transactionType: type as CreditTransactionType,
     page,
     limit,
   });
@@ -94,6 +96,27 @@ export default async function CreditsPage({
 
   const remainingCredits = await getRemainingCredits(user.id);
 
+  const tabs: Tab[] = [
+    {
+      title: "All",
+      name: "all",
+      url: "/settings/credits",
+      is_active: !type || type === "all",
+    },
+    {
+      title: "Grant",
+      name: "grant",
+      url: "/settings/credits?type=grant",
+      is_active: type === "grant",
+    },
+    {
+      title: "Consume",
+      name: "consume",
+      url: "/settings/credits?type=consume",
+      is_active: type === "consume",
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <PanelCard
@@ -112,7 +135,7 @@ export default async function CreditsPage({
           {remainingCredits}
         </div>
       </PanelCard>
-      <TableCard title="Credits History" table={table} />
+      <TableCard title="Credits History" tabs={tabs} table={table} />
     </div>
   );
 }

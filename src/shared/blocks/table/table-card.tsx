@@ -10,21 +10,27 @@ import {
 } from "@/shared/components/ui/card";
 import { Pagination } from "@/shared/blocks/common/pagination";
 import { cn } from "@/shared/lib/utils";
-import { Button as ButtonType } from "@/shared/types/blocks/common";
+import {
+  Button as ButtonType,
+  Tab as TabType,
+} from "@/shared/types/blocks/common";
 import { Button } from "@/shared/components/ui/button";
 import { Link } from "@/core/i18n/navigation";
-import { SmartIcon } from "../common/smart-icon";
+import { SmartIcon } from "@/shared/blocks/common/smart-icon";
+import { Tabs } from "@/shared/blocks/common/tabs";
 
 export function TableCard({
   title,
   description,
   buttons,
+  tabs,
   table,
   className,
 }: {
   title?: string;
   description?: string;
   buttons?: ButtonType[];
+  tabs?: TabType[];
   table: TableType;
   className?: string;
 }) {
@@ -62,6 +68,7 @@ export function TableCard({
 
       {table && (
         <CardContent>
+          {tabs && tabs.length > 0 ? <Tabs tabs={tabs} /> : null}
           <Table {...table} />
         </CardContent>
       )}

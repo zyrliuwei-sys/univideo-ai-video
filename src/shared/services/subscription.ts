@@ -92,6 +92,25 @@ export async function getSubscriptions({
 }
 
 /**
+ * get current subscription
+ */
+export async function getCurrentSubscription(userId: string) {
+  const [result] = await db()
+    .select()
+    .from(subscription)
+    .where(
+      and(
+        eq(subscription.userId, userId),
+        eq(subscription.status, SubscriptionStatus.ACTIVE)
+      )
+    )
+    .orderBy(desc(subscription.createdAt))
+    .limit(1);
+
+  return result;
+}
+
+/**
  * get subscriptions count
  */
 export async function getSubscriptionsCount({

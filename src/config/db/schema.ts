@@ -5,6 +5,7 @@ import {
   boolean,
   integer,
   jsonb,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -156,6 +157,7 @@ export const order = pgTable("order", {
   callbackUrl: text("callback_url"), // callback url, after handle callback
   creditsAmount: integer("credits_amount"), // credits amount
   creditsValidDays: integer("credits_valid_days"), // credits validity days
+  planName: varchar("plan_name"), // subscription plan name
 });
 
 export const subscription = pgTable("subscription", {
@@ -183,6 +185,8 @@ export const subscription = pgTable("subscription", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   deletedAt: timestamp("deleted_at"),
+  planName: varchar("plan_name"),
+  billingUrl: varchar("billing_url"),
 });
 
 export const credit = pgTable("credit", {

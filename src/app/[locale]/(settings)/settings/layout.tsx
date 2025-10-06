@@ -30,16 +30,16 @@ export default async function SettingsLayout({
         is_active: pathname === "/settings/security",
       },
       {
+        title: "Billing",
+        url: "/settings/billing",
+        icon: "CreditCard",
+        is_active: pathname === "/settings/billing",
+      },
+      {
         title: "Payments",
         url: "/settings/payments",
         icon: "DollarSign",
         is_active: pathname === "/settings/payments",
-      },
-      {
-        title: "Subscription",
-        url: "/settings/subscription",
-        icon: "CreditCard",
-        is_active: pathname === "/settings/subscription",
       },
       {
         title: "Credits",
@@ -73,7 +73,12 @@ export default async function SettingsLayout({
   };
 
   return (
-    <ConsoleLayout title={title} nav={nav} className="py-16 md:py-20">
+    <ConsoleLayout
+      title={title}
+      nav={nav}
+      topNav={topNav}
+      className="py-16 md:py-20"
+    >
       {children}
     </ConsoleLayout>
   );

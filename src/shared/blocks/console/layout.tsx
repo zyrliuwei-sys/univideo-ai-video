@@ -30,14 +30,14 @@ export function ConsoleLayout({
     <div className={`min-h-screen bg-background ${className}`}>
       {/* Top Navigation */}
       {topNav && (
-        <div className="border-b border-border bg-card">
+        <div className="border-b border-border">
           <div className="container">
             <nav className="flex items-center gap-4 text-sm">
               {topNav.items.map((item, idx) => (
                 <Link
                   key={idx}
                   href={item.url || ""}
-                  className={`text-muted-foreground hover:bg-foreground/10 flex items-center gap-2 px-3 py-2 rounded-md ${
+                  className={`text-muted-foreground hover:bg-foreground/10 flex items-center gap-2 px-3 py-2 ${
                     item.is_active
                       ? "border-b-2 border-primary text-muted-foreground"
                       : ""

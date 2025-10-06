@@ -13,17 +13,38 @@ Content-Type: application/json
   "content": "This is a test email from ShipAny"
 }
 
-### generate image
-POST {{baseUrl}}/api/demo/gen-image
+### generate music
+POST {{baseUrl}}/api/ai/generate
 Content-Type: application/json
 
 {
+  "type": "music",
+  "provider": "kie",
+  "model": "V5",
+  "prompt": "a simple song about happy birthday."
+}
+
+### generate image
+POST {{baseUrl}}/api/ai/generate
+Content-Type: application/json
+
+{
+  "type": "image",
+  "provider": "fal",
   "model": "google/nano-banana",
-  "prompt": "Make the sheets in the style of the logo. Make the scene natural.",
+  "prompt": "two cats are running.",
   "num": 1,
   "options": {
     "image_input": ["https://replicate.delivery/pbxt/NbYIclp4A5HWLsJ8lF5KgiYSNaLBBT1jUcYcHYQmN1uy5OnN/tmpcqc07f_q.png","https://replicate.delivery/pbxt/NbYId45yH8s04sptdtPcGqFIhV7zS5GTcdS3TtNliyTAoYPO/Screenshot%202025-08-26%20at%205.30.12%E2%80%AFPM.png"]
   }
+}
+
+### ai query 
+POST {{baseUrl}}/api/ai/query
+Content-Type: application/json 
+
+{
+  "taskId": "a936e86e21c504a773bd0932a6885bdb"
 }
 
 ### generate text

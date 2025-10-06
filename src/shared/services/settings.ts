@@ -3,6 +3,10 @@ export interface Setting {
   title: string;
   type: string;
   placeholder?: string;
+  options?: {
+    title: string;
+    value: string;
+  }[];
   tip?: string;
   value?: string;
   group?: string;
@@ -28,6 +32,12 @@ export const settingGroups: SettingGroup[] = [
     title: "Github Auth",
     description: "custom your github auth settings",
     tab: "auth",
+  },
+  {
+    name: "basic_payment",
+    title: "Basic",
+    description: "custom your basic payment settings",
+    tab: "payment",
   },
   {
     name: "stripe",
@@ -135,6 +145,29 @@ export const settings: Setting[] = [
     placeholder: "",
     group: "github_auth",
     tab: "auth",
+  },
+  {
+    name: "payment_provider",
+    title: "Payment Provider",
+    type: "select",
+    value: "stripe",
+    options: [
+      {
+        title: "Stripe",
+        value: "stripe",
+      },
+      {
+        title: "Creem",
+        value: "creem",
+      },
+      {
+        title: "Paypal",
+        value: "paypal",
+      },
+    ],
+    tip: "Choose the payment provider to use",
+    group: "basic_payment",
+    tab: "payment",
   },
   {
     name: "stripe_publishable_key",

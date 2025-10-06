@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Lightbulb, Loader2, SendHorizonal, Zap } from "lucide-react";
 import {
   Pricing as PricingType,
   PricingItem,
@@ -20,25 +20,36 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
+import { SmartIcon } from "@/shared/blocks/common";
+import { Subscription } from "@/shared/services/subscription";
 
 export function Pricing({
   pricing,
   srOnlyTitle,
   className,
+  currentSubscription,
 }: {
   pricing: PricingType;
   srOnlyTitle?: string;
   className?: string;
+  currentSubscription?: Subscription;
 }) {
   const locale = useLocale();
 
   const { user, setIsShowSignModal } = useAppContext();
 
   const [group, setGroup] = useState(() => {
+    // find current pricing item
+    const currentItem = pricing.items?.find(
+      (i) => i.product_id === currentSubscription?.productId
+    );
+
     // First look for a group with is_featured set to true
     const featuredGroup = pricing.groups?.find((g) => g.is_featured);
     // If no featured group exists, fall back to the first group
-    return featuredGroup?.name || pricing.groups?.[0]?.name;
+    return (
+      currentItem?.group || featuredGroup?.name || pricing.groups?.[0]?.name
+    );
   });
   const [isLoading, setIsLoading] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
@@ -59,7 +70,7 @@ export function Pricing({
       setIsLoading(true);
       setProductId(item.product_id);
 
-      const response = await fetch("/api/checkout", {
+      const response = await fetch("/api/payment/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -75,24 +86,25 @@ export function Pricing({
         return;
       }
 
+      if (!response.ok) {
+        throw new Error(`request failed with status ${response.status}`);
+      }
+
       const { code, message, data } = await response.json();
       if (code !== 0) {
-        toast.error(message);
-        return;
+        throw new Error(message);
       }
 
       const { checkoutUrl } = data;
       if (!checkoutUrl) {
-        toast.error("checkout failed");
-        return;
+        throw new Error("checkout url not found");
       }
 
       window.location.href = checkoutUrl;
-    } catch (e) {
+    } catch (e: any) {
       console.log("checkout failed: ", e);
+      toast.error("checkout failed: " + e.message);
 
-      toast.error("checkout failed");
-    } finally {
       setIsLoading(false);
       setProductId(null);
     }
@@ -116,7 +128,7 @@ export function Pricing({
         <h2 className="mb-6 text-pretty text-3xl font-bold lg:text-4xl">
           {pricing.title}
         </h2>
-        <p className="mb-4 max-w-xl text-muted-foreground lg:max-w-none lg:text-lg">
+        <p className="mb-4 max-w-xl mx-auto text-muted-foreground lg:max-w-none lg:text-lg">
           {pricing.description}
         </p>
       </div>
@@ -152,6 +164,14 @@ export function Pricing({
               return null;
             }
 
+            let isCurrentPlan = false;
+            if (
+              currentSubscription &&
+              currentSubscription.productId === item.product_id
+            ) {
+              isCurrentPlan = true;
+            }
+
             return (
               <Card key={idx} className="relative">
                 {item.label && (
@@ -176,16 +196,44 @@ export function Pricing({
                     </span>
                   )}
 
-                  <Button
-                    onClick={() => handleCheckout(item)}
-                    className={cn(
-                      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
-                      "mt-4 w-full h-9 px-4 py-2",
-                      "shadow-md border-[0.5px] border-white/25 shadow-black/20 bg-primary text-primary-foreground hover:bg-primary/90"
-                    )}
-                  >
-                    {item.button?.title}
-                  </Button>
+                  {isCurrentPlan ? (
+                    <Button
+                      variant="outline"
+                      className="mt-4 w-full h-9 px-4 py-2"
+                      disabled
+                    >
+                      <span className="hidden md:block text">Current Plan</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleCheckout(item)}
+                      disabled={isLoading}
+                      className={cn(
+                        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+                        "mt-4 w-full h-9 px-4 py-2",
+                        "shadow-md border-[0.5px] border-white/25 shadow-black/20 bg-primary text-primary-foreground hover:bg-primary/90"
+                      )}
+                    >
+                      {isLoading && item.product_id === productId ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          <span className="hidden md:block">Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          {item.button?.icon && (
+                            <SmartIcon
+                              name={item.button?.icon as string}
+                              className="size-4"
+                            />
+                          )}
+                          <span className="hidden md:block">
+                            {item.button?.title}
+                          </span>
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </CardHeader>
 
                 <CardContent className="space-y-4">

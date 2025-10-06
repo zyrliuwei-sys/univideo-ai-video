@@ -27,32 +27,32 @@
           "icon": "DollarSign"
         },
         {
-          "title": "Demo",
+          "title": "AI",
           "icon": "Bot",
           "children": [
             {
               "title": "AI Chatbot",
-              "url": "/demo/ai-chatbot",
+              "url": "/ai-chatbot",
               "icon": "Bot"
             },
             {
               "title": "AI Image Generator",
-              "url": "/demo/ai-image-generator",
+              "url": "/ai-image-generator",
               "icon": "Image"
             },
             {
               "title": "AI Music Generator",
-              "url": "/demo/ai-music-generator",
+              "url": "/ai-music-generator",
               "icon": "Music"
             },
             {
               "title": "AI Video Generator",
-              "url": "/demo/ai-video-generator",
+              "url": "/ai-video-generator",
               "icon": "Video"
             },
             {
               "title": "AI Audio Generator",
-              "url": "/demo/ai-audio-generator",
+              "url": "/ai-audio-generator",
               "icon": "AudioLines"
             }
           ]

@@ -1,14 +1,8 @@
-"use client";
-
-import { cn } from "@/shared/lib/utils";
-import { ScrollArea } from "@/shared/components/ui/scroll-area";
-import { ScrollBar } from "@/shared/components/ui/scroll-area";
 import { Button as ButtonType, Tab } from "@/shared/types/blocks/common";
-import { Link, usePathname, useRouter } from "@/core/i18n/navigation";
+import { Link } from "@/core/i18n/navigation";
 import { Button } from "@/shared/components/ui/button";
 import { SmartIcon } from "@/shared/blocks/common/smart-icon";
-import { TabsTrigger, Tabs, TabsList } from "@/shared/components/ui/tabs";
-import { useEffect, useState } from "react";
+import { Tabs } from "@/shared/blocks/common/tabs";
 
 export function MainHeader({
   title,
@@ -21,26 +15,6 @@ export function MainHeader({
   tabs?: Tab[];
   actions?: ButtonType[];
 }) {
-  const url = typeof window !== "undefined" ? window.location.href : "";
-  const router = useRouter();
-  const [tabName, setTabName] = useState(
-    tabs?.find((tab) => tab.is_active)?.name || ""
-  );
-  const [tab, setTab] = useState({} as Tab);
-
-  useEffect(() => {
-    if (tabName) {
-      setTab(tabs?.find((tab) => tab.name === tabName) || ({} as Tab));
-    }
-  }, [tabName]);
-
-  useEffect(() => {
-    console.log("tab", tab);
-    if (tab && tab.url && tab.url !== url) {
-      router.push(tab.url);
-    }
-  }, [tab]);
-
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between mb-6">
@@ -67,24 +41,7 @@ export function MainHeader({
           ))}
         </div>
       </div>
-      {tabs && tabs.length > 0 ? (
-        <div className="relative mb-8">
-          <ScrollArea className="w-full lg:max-w-none">
-            <div className="space-x-2 flex items-center">
-              <Tabs value={tabName} onValueChange={setTabName}>
-                <TabsList>
-                  {tabs.map((tab, idx) => (
-                    <TabsTrigger key={idx} value={tab.name || ""}>
-                      {tab.title}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-            <ScrollBar orientation="horizontal" className="invisible" />
-          </ScrollArea>
-        </div>
-      ) : null}
+      {tabs && tabs.length > 0 ? <Tabs tabs={tabs} /> : null}
     </div>
   );
 }

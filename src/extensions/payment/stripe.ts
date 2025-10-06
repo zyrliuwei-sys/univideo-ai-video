@@ -9,6 +9,7 @@ import {
   PaymentType,
   PaymentInterval,
 } from ".";
+import { envConfigs } from "@/config";
 
 /**
  * Stripe payment provider configs
@@ -162,10 +163,20 @@ export class StripeProvider implements PaymentProvider {
 
       let subscription: Stripe.Response<Stripe.Subscription> | undefined =
         undefined;
+      let billingUrl = "";
+
       if (session.subscription) {
         subscription = await this.client.subscriptions.retrieve(
           session.subscription as string
         );
+
+        const billing = await this.client.billingPortal.sessions.create({
+          customer: subscription.customer as string,
+
+          return_url: `${envConfigs.app_url}/settings/billing`,
+        });
+
+        billingUrl = billing.url;
       }
 
       const result: PaymentSession = {
@@ -206,6 +217,7 @@ export class StripeProvider implements PaymentProvider {
           currentPeriodEnd: new Date(data.current_period_end * 1000),
           interval: data.plan.interval as PaymentInterval,
           intervalCount: data.plan.interval_count || 1,
+          billingUrl: billingUrl,
         };
         result.subscriptionResult = subscription;
       }

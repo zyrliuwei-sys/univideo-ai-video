@@ -3,7 +3,7 @@ import { getLocale, setRequestLocale } from "next-intl/server";
 import { getUserInfo } from "@/shared/services/user";
 import { redirect } from "next/navigation";
 
-export default async function SettingsLayout({
+export default async function SettingsRootLayout({
   children,
 }: {
   children: React.ReactNode;

@@ -93,7 +93,7 @@ export async function POST(req: Request) {
         order_no: orderNo,
         user_id: user.id,
       },
-      successUrl: `${envConfigs.app_url}/api/checkout/callback?order_no=${orderNo}`,
+      successUrl: `${envConfigs.app_url}/api/payment/callback?order_no=${orderNo}`,
       cancelUrl: `${envConfigs.app_url}/pricing`,
     };
 
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
 
     const currentTime = new Date();
 
-    const callbackUrl = `${envConfigs.app_url}/`;
+    const callbackUrl = `${envConfigs.app_url}/settings/billing`;
 
     // build order info
     const order: NewOrder = {
@@ -139,6 +139,7 @@ export async function POST(req: Request) {
       callbackUrl: callbackUrl,
       creditsAmount: pricingItem.credits,
       creditsValidDays: pricingItem.valid_days,
+      planName: pricingItem.plan_name || "",
     };
 
     // create order

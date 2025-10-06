@@ -17,7 +17,14 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/avatar";
 import { useRouter } from "@/core/i18n/navigation";
-import { CreditCard, Loader2 } from "lucide-react";
+import {
+  Coins,
+  CreditCard,
+  ExternalLinkIcon,
+  Loader2,
+  LogOut,
+  User,
+} from "lucide-react";
 import { envConfigs } from "@/config";
 import { SignModal } from "./sign-modal";
 import { useAppContext } from "@/shared/contexts/app";
@@ -58,7 +65,20 @@ export function SignUser({
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link href="/settings/profile">
+              <User />
+              {user.name}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem asChild>
+            <Link href="/settings/credits">
+              <Coins />
+              {user.credits?.remainingCredits}
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
 
           <DropdownMenuItem asChild>
@@ -80,6 +100,7 @@ export function SignUser({
               })
             }
           >
+            <LogOut />
             <span>Sign Out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

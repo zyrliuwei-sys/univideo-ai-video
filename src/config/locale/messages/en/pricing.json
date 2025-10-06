@@ -152,7 +152,8 @@
         "product_name": "ShipAny Boilerplate Starter Monthly",
         "credits": 100,
         "valid_days": 30,
-        "group": "monthly"
+        "group": "monthly",
+        "plan_name": "Starter"
       },
       {
         "title": "Standard",
@@ -186,7 +187,8 @@
         "product_name": "ShipAny Boilerplate Standard Monthly",
         "credits": 200,
         "valid_days": 30,
-        "group": "monthly"
+        "group": "monthly",
+        "plan_name": "Standard"
       },
       {
         "title": "Premium",
@@ -218,7 +220,8 @@
         "product_name": "ShipAny Boilerplate Premium Monthly",
         "credits": 300,
         "valid_days": 30,
-        "group": "monthly"
+        "group": "monthly",
+        "plan_name": "Premium"
       },
       {
         "title": "Starter",
@@ -250,7 +253,8 @@
         "product_name": "ShipAny Boilerplate Starter Annually",
         "credits": 1200,
         "valid_days": 365,
-        "group": "yearly"
+        "group": "yearly",
+        "plan_name": "Starter"
       },
       {
         "title": "Standard",
@@ -284,7 +288,8 @@
         "product_name": "ShipAny Boilerplate Standard Annually",
         "credits": 2400,
         "valid_days": 365,
-        "group": "yearly"
+        "group": "yearly",
+        "plan_name": "Standard"
       },
       {
         "title": "Premium",
@@ -316,7 +321,8 @@
         "product_name": "ShipAny Boilerplate Premium Annually",
         "credits": 3600,
         "valid_days": 365,
-        "group": "yearly"
+        "group": "yearly",
+        "plan_name": "Premium"
       }
     ]
   }

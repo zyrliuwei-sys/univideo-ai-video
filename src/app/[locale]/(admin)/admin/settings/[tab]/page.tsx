@@ -105,6 +105,8 @@ export default async function SettingsPage({
           type: setting.type as any,
           placeholder: setting.placeholder,
           group: setting.group,
+          options: setting.options,
+          tip: setting.tip,
         })),
       passby: {
         provider: group.name,
@@ -126,7 +128,12 @@ export default async function SettingsPage({
       <Main>
         <MainHeader title="Settings" tabs={tabs} />
         {forms.map((form) => (
-          <FormCard key={form.title} form={form} className="md:max-w-xl mb-8" />
+          <FormCard
+            key={form.title}
+            title={form.title}
+            form={form}
+            className="md:max-w-xl mb-8"
+          />
         ))}
       </Main>
     </>

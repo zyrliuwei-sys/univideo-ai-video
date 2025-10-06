@@ -97,7 +97,7 @@ export async function GET(req: Request) {
           paymentProvider: order.paymentProvider,
           subscriptionId: subscriptionInfo.subscriptionId,
           subscriptionResult: JSON.stringify(session.subscriptionResult),
-          productId: subscriptionInfo.productId,
+          productId: order.productId,
           description: subscriptionInfo.description,
           amount: subscriptionInfo.amount,
           currency: subscriptionInfo.currency,
@@ -106,6 +106,8 @@ export async function GET(req: Request) {
           trialPeriodDays: subscriptionInfo.trialPeriodDays,
           currentPeriodStart: subscriptionInfo.currentPeriodStart,
           currentPeriodEnd: subscriptionInfo.currentPeriodEnd,
+          billingUrl: subscriptionInfo.billingUrl,
+          planName: order.planName || order.productName,
         };
 
         updateOrder.subscriptionId = session.subscriptionId;
@@ -150,7 +152,8 @@ export async function GET(req: Request) {
         await updateOrderByOrderNo(orderNo, updateOrder);
       }
 
-      redirectUrl = `${order.callbackUrl || envConfigs.app_url}/`;
+      redirectUrl =
+        order.callbackUrl || `${envConfigs.app_url}/settings/billing`;
     } else if (
       session.paymentStatus === PaymentStatus.FAILED ||
       session.paymentStatus === PaymentStatus.CANCELLED

@@ -8,13 +8,15 @@ import {
   Order,
   OrderStatus,
 } from "@/shared/services/order";
+import { PaymentType } from "@/extensions/payment";
+import { Tab } from "@/shared/types/blocks/common";
 
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: number; pageSize?: number }>;
+  searchParams: Promise<{ page?: number; pageSize?: number; type?: string }>;
 }) {
-  const { page: pageNum, pageSize } = await searchParams;
+  const { page: pageNum, pageSize, type } = await searchParams;
   const page = pageNum || 1;
   const limit = pageSize || 20;
 
@@ -24,11 +26,13 @@ export default async function PaymentsPage({
   }
 
   const total = await getOrdersCount({
+    paymentType: type as PaymentType,
     userId: user.id,
     status: OrderStatus.PAID,
   });
 
   const orders = await getOrders({
+    paymentType: type as PaymentType,
     userId: user.id,
     status: OrderStatus.PAID,
     page,
@@ -91,11 +95,39 @@ export default async function PaymentsPage({
     },
   };
 
+  const tabs: Tab[] = [
+    {
+      title: "All",
+      name: "all",
+      url: "/settings/payments",
+      is_active: !type || type === "all",
+    },
+    {
+      title: "One-Time",
+      name: "one-time",
+      url: "/settings/payments?type=one-time",
+      is_active: type === "one-time",
+    },
+    {
+      title: "Subscription",
+      name: "subscription",
+      url: "/settings/payments?type=subscription",
+      is_active: type === "subscription",
+    },
+    {
+      title: "Renew",
+      name: "renew",
+      url: "/settings/payments?type=renew",
+      is_active: type === "renew",
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <TableCard
         title="Payments"
         description="View your payments"
+        tabs={tabs}
         table={table}
       />
     </div>
