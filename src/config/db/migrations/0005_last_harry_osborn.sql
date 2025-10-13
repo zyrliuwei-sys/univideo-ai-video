@@ -1,1 +1,0 @@
-ALTER TABLE "order" ADD COLUMN "product_name" text;

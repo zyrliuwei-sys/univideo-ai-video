@@ -54,3 +54,4 @@ wrangler.toml
 .wrangler
 
 .source
+src/config/db/migrations

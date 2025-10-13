@@ -1,1 +1,0 @@
-ALTER TABLE "order" ADD COLUMN "plan_name" varchar;
