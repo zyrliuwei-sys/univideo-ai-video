@@ -1,9 +1,7 @@
 import createIntlMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/core/i18n/config";
-import { betterFetch } from "@better-fetch/fetch";
-import { Session } from "better-auth";
-import { envConfigs } from "@/config";
+import { getSessionCookie } from "better-auth/cookies";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
@@ -26,37 +24,11 @@ export async function middleware(request: NextRequest) {
     pathWithoutLocale.startsWith("/settings") ||
     pathWithoutLocale.startsWith("/activity")
   ) {
-    try {
-      // Use configured auth_url instead of request.nextUrl.origin
-      // This fixes the issue when deployed behind reverse proxy (like in Dokploy)
-      // where request.nextUrl.origin returns internal address (e.g. http://localhost:3000)
-      const baseURL = envConfigs.auth_url;
+    // Check if session cookie exists
+    const sessionCookie = getSessionCookie(request);
 
-      const { data: session } = await betterFetch<Session>(
-        "/api/auth/get-session",
-        {
-          baseURL: baseURL,
-          headers: {
-            cookie: request.headers.get("cookie") || "", // Forward the cookies from the request
-          },
-        }
-      );
-
-      // console.log("session in proxy", session, baseURL);
-
-      if (!session) {
-        // Redirect to sign-in page with locale and callback URL
-        const signInUrl = new URL(
-          isValidLocale ? `/${locale}/sign-in` : "/sign-in",
-          request.url
-        );
-        // Add the current path (including search params) as callback - use relative path for multi-language support
-        const callbackPath = pathWithoutLocale + request.nextUrl.search;
-        signInUrl.searchParams.set("callbackUrl", callbackPath);
-        return NextResponse.redirect(signInUrl);
-      }
-    } catch (error) {
-      // If session validation fails, redirect to sign-in
+    // If no session token found, redirect to sign-in
+    if (!sessionCookie) {
       const signInUrl = new URL(
         isValidLocale ? `/${locale}/sign-in` : "/sign-in",
         request.url
@@ -66,6 +38,10 @@ export async function middleware(request: NextRequest) {
       signInUrl.searchParams.set("callbackUrl", callbackPath);
       return NextResponse.redirect(signInUrl);
     }
+
+    // Note: We only check if session token exists here.
+    // Full session validation happens on the client side and in API routes.
+    // This is a lightweight check to prevent unauthorized access to protected routes.
   }
 
   intlResponse.headers.set("x-pathname", request.nextUrl.pathname);

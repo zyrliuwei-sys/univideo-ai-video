@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { getAuthOptions } from "./config";
+import { isCloudflareWorker } from "@/shared/lib/env";
 
 // global auth instance
 let authInstance: Awaited<ReturnType<typeof getAuth>> | null = null;
@@ -9,6 +10,11 @@ let authInstance: Awaited<ReturnType<typeof getAuth>> | null = null;
 export async function getAuth(): Promise<
   Awaited<ReturnType<typeof betterAuth>>
 > {
+  if (isCloudflareWorker) {
+    return betterAuth(await getAuthOptions());
+  }
+
+  // singleton mode only when not in Cloudflare Workers
   if (!authInstance) {
     authInstance = betterAuth(await getAuthOptions());
   }

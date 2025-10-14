@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { envConfigs } from "@/config";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { isCloudflareWorker } from "@/shared/lib/env";
 
 // Global database connection instance (singleton pattern)
 let dbInstance: ReturnType<typeof drizzle> | null = null;
@@ -9,10 +10,6 @@ let client: ReturnType<typeof postgres> | null = null;
 
 export function db() {
   let databaseUrl = envConfigs.database_url;
-
-  // Detect if running in Cloudflare Workers environment
-  const isCloudflareWorker =
-    typeof globalThis !== "undefined" && "Cloudflare" in globalThis;
 
   let isHyperdrive = false;
 
