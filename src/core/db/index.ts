@@ -1,7 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { envConfigs } from "@/config";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { isCloudflareWorker } from "@/shared/lib/env";
 
 // Global database connection instance (singleton pattern)
@@ -14,7 +13,7 @@ export function db() {
   let isHyperdrive = false;
 
   if (isCloudflareWorker) {
-    const { env }: { env: any } = getCloudflareContext();
+    const { env }: { env: any } = { env: {} };
     // Detect if set Hyperdrive
     isHyperdrive = "HYPERDRIVE" in env;
 
