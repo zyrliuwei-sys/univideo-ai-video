@@ -1,10 +1,37 @@
 import {
   CreemProvider,
   PaymentManager,
+  PaymentSession,
+  PaymentStatus,
+  PaymentType,
   PayPalProvider,
   StripeProvider,
 } from "@/extensions/payment";
 import { Configs, getAllConfigs } from "@/shared/services/config";
+import {
+  findOrderByOrderNo,
+  NewOrder,
+  Order,
+  OrderStatus,
+  UpdateOrder,
+  updateOrderByOrderNo,
+  updateOrderInTransaction,
+  updateSubscriptionInTransaction,
+} from "./order";
+import {
+  NewSubscription,
+  Subscription,
+  SubscriptionStatus,
+  UpdateSubscription,
+} from "./subscription";
+import { getSnowId, getUuid } from "../lib/hash";
+import {
+  calculateCreditExpirationTime,
+  CreditStatus,
+  CreditTransactionScene,
+  CreditTransactionType,
+  NewCredit,
+} from "./credit";
 
 /**
  * get payment service with configs
@@ -20,6 +47,7 @@ export function getPaymentServiceWithConfigs(configs: Configs) {
       new StripeProvider({
         secretKey: configs.stripe_secret_key,
         publishableKey: configs.stripe_publishable_key,
+        signingSecret: configs.stripe_signing_secret,
       }),
       defaultProvider === "stripe"
     );
@@ -32,6 +60,7 @@ export function getPaymentServiceWithConfigs(configs: Configs) {
         apiKey: configs.creem_api_key,
         environment:
           configs.creem_environment === "production" ? "production" : "sandbox",
+        signingSecret: configs.creem_signing_secret,
       }),
       defaultProvider === "creem"
     );
@@ -69,4 +98,375 @@ export async function getPaymentService(): Promise<PaymentManager> {
     paymentService = getPaymentServiceWithConfigs(configs);
   }
   return paymentService;
+}
+
+/**
+ * handle checkout success
+ */
+export async function handleCheckoutSuccess({
+  order,
+  session,
+}: {
+  order: Order; // checkout order
+  session: PaymentSession; // payment session
+}) {
+  const orderNo = order.orderNo;
+  if (!orderNo) {
+    throw new Error("invalid order");
+  }
+
+  if (order.paymentType === PaymentType.SUBSCRIPTION) {
+    if (!session.subscriptionId || !session.subscriptionInfo) {
+      throw new Error("subscription id or subscription info not found");
+    }
+  }
+
+  // payment success
+  if (session.paymentStatus === PaymentStatus.SUCCESS) {
+    // update order status to be paid
+    const updateOrder: UpdateOrder = {
+      status: OrderStatus.PAID,
+      paymentResult: JSON.stringify(session.paymentResult),
+      paymentAmount: session.paymentInfo?.paymentAmount,
+      paymentCurrency: session.paymentInfo?.paymentCurrency,
+      paymentEmail: session.paymentInfo?.paymentEmail,
+      paidAt: session.paymentInfo?.paidAt,
+      invoiceId: session.paymentInfo?.invoiceId,
+      invoiceUrl: session.paymentInfo?.invoiceUrl,
+      subscriptionNo: "",
+      transactionId: session.paymentInfo?.transactionId,
+      paymentUserName: session.paymentInfo?.paymentUserName,
+    };
+
+    // new subscription
+    let newSubscription: NewSubscription | undefined = undefined;
+    const subscriptionInfo = session.subscriptionInfo;
+
+    // subscription first payment
+    if (subscriptionInfo) {
+      // new subscription
+      newSubscription = {
+        id: getUuid(),
+        subscriptionNo: getSnowId(),
+        userId: order.userId,
+        userEmail: order.paymentEmail || order.userEmail,
+        status: SubscriptionStatus.ACTIVE,
+        paymentProvider: order.paymentProvider,
+        subscriptionId: subscriptionInfo.subscriptionId,
+        subscriptionResult: JSON.stringify(session.subscriptionResult),
+        productId: order.productId,
+        description: subscriptionInfo.description || "Subscription Created",
+        amount: subscriptionInfo.amount,
+        currency: subscriptionInfo.currency,
+        interval: subscriptionInfo.interval,
+        intervalCount: subscriptionInfo.intervalCount,
+        trialPeriodDays: subscriptionInfo.trialPeriodDays,
+        currentPeriodStart: subscriptionInfo.currentPeriodStart,
+        currentPeriodEnd: subscriptionInfo.currentPeriodEnd,
+        billingUrl: subscriptionInfo.billingUrl,
+        planName: order.planName || order.productName,
+        productName: order.productName,
+        creditsAmount: order.creditsAmount,
+        creditsValidDays: order.creditsValidDays,
+        paymentProductId: order.paymentProductId,
+      };
+
+      updateOrder.subscriptionNo = newSubscription.subscriptionNo;
+      updateOrder.subscriptionId = session.subscriptionId;
+      updateOrder.subscriptionResult = JSON.stringify(
+        session.subscriptionResult
+      );
+    }
+
+    // grant credit for order
+    let newCredit: NewCredit | undefined = undefined;
+    if (order.creditsAmount && order.creditsAmount > 0) {
+      const credits = order.creditsAmount;
+      const expiresAt =
+        credits > 0
+          ? calculateCreditExpirationTime({
+              creditsValidDays: order.creditsValidDays || 0,
+              currentPeriodEnd: subscriptionInfo?.currentPeriodEnd,
+            })
+          : null;
+
+      newCredit = {
+        id: getUuid(),
+        userId: order.userId,
+        userEmail: order.userEmail,
+        orderNo: order.orderNo,
+        subscriptionNo: newSubscription?.subscriptionNo,
+        transactionNo: getSnowId(),
+        transactionType: CreditTransactionType.GRANT,
+        transactionScene:
+          order.paymentType === PaymentType.SUBSCRIPTION
+            ? CreditTransactionScene.SUBSCRIPTION
+            : CreditTransactionScene.PAYMENT,
+        credits: credits,
+        remainingCredits: credits,
+        description: `Grant credit`,
+        expiresAt: expiresAt,
+        status: CreditStatus.ACTIVE,
+      };
+    }
+
+    await updateOrderInTransaction({
+      orderNo,
+      updateOrder,
+      newSubscription,
+      newCredit,
+    });
+  } else if (
+    session.paymentStatus === PaymentStatus.FAILED ||
+    session.paymentStatus === PaymentStatus.CANCELLED
+  ) {
+    // update order status to be failed
+    await updateOrderByOrderNo(orderNo, {
+      status: OrderStatus.FAILED,
+      paymentResult: JSON.stringify(session.paymentResult),
+    });
+  } else if (session.paymentStatus === PaymentStatus.PROCESSING) {
+    // update order payment result
+    await updateOrderByOrderNo(orderNo, {
+      paymentResult: JSON.stringify(session.paymentResult),
+    });
+  } else {
+    throw new Error("unknown payment status");
+  }
+}
+
+/**
+ * handle payment success
+ */
+export async function handlePaymentSuccess({
+  order,
+  session,
+}: {
+  order: Order; // checkout order
+  session: PaymentSession; // payment session
+}) {
+  const orderNo = order.orderNo;
+  if (!orderNo) {
+    throw new Error("invalid order");
+  }
+
+  if (order.paymentType === PaymentType.SUBSCRIPTION) {
+    if (!session.subscriptionId || !session.subscriptionInfo) {
+      throw new Error("subscription id or subscription info not found");
+    }
+  }
+
+  // payment success
+  if (session.paymentStatus === PaymentStatus.SUCCESS) {
+    // update order status to be paid
+    const updateOrder: UpdateOrder = {
+      status: OrderStatus.PAID,
+      paymentResult: JSON.stringify(session.paymentResult),
+      paymentAmount: session.paymentInfo?.paymentAmount,
+      paymentCurrency: session.paymentInfo?.paymentCurrency,
+      paymentEmail: session.paymentInfo?.paymentEmail,
+      paymentUserName: session.paymentInfo?.paymentUserName,
+      paidAt: session.paymentInfo?.paidAt,
+      invoiceId: session.paymentInfo?.invoiceId,
+      invoiceUrl: session.paymentInfo?.invoiceUrl,
+    };
+
+    // new subscription
+    let newSubscription: NewSubscription | undefined = undefined;
+    const subscriptionInfo = session.subscriptionInfo;
+
+    // subscription first payment
+    if (subscriptionInfo) {
+      // new subscription
+      newSubscription = {
+        id: getUuid(),
+        subscriptionNo: getSnowId(),
+        userId: order.userId,
+        userEmail: order.paymentEmail || order.userEmail,
+        status: SubscriptionStatus.ACTIVE,
+        paymentProvider: order.paymentProvider,
+        subscriptionId: subscriptionInfo.subscriptionId,
+        subscriptionResult: JSON.stringify(session.subscriptionResult),
+        productId: order.productId,
+        description: subscriptionInfo.description,
+        amount: subscriptionInfo.amount,
+        currency: subscriptionInfo.currency,
+        interval: subscriptionInfo.interval,
+        intervalCount: subscriptionInfo.intervalCount,
+        trialPeriodDays: subscriptionInfo.trialPeriodDays,
+        currentPeriodStart: subscriptionInfo.currentPeriodStart,
+        currentPeriodEnd: subscriptionInfo.currentPeriodEnd,
+        planName: order.planName || order.productName,
+        billingUrl: subscriptionInfo.billingUrl,
+        productName: order.productName,
+        creditsAmount: order.creditsAmount,
+        creditsValidDays: order.creditsValidDays,
+        paymentProductId: order.paymentProductId,
+      };
+
+      updateOrder.subscriptionId = session.subscriptionId;
+      updateOrder.subscriptionResult = JSON.stringify(
+        session.subscriptionResult
+      );
+    }
+
+    // grant credit for order
+    let newCredit: NewCredit | undefined = undefined;
+    if (order.creditsAmount && order.creditsAmount > 0) {
+      const credits = order.creditsAmount;
+      const expiresAt =
+        credits > 0
+          ? calculateCreditExpirationTime({
+              creditsValidDays: order.creditsValidDays || 0,
+              currentPeriodEnd: subscriptionInfo?.currentPeriodEnd,
+            })
+          : null;
+
+      newCredit = {
+        id: getUuid(),
+        userId: order.userId,
+        userEmail: order.userEmail,
+        orderNo: order.orderNo,
+        subscriptionNo: newSubscription?.subscriptionNo,
+        transactionNo: getSnowId(),
+        transactionType: CreditTransactionType.GRANT,
+        transactionScene:
+          order.paymentType === PaymentType.SUBSCRIPTION
+            ? CreditTransactionScene.SUBSCRIPTION
+            : CreditTransactionScene.PAYMENT,
+        credits: credits,
+        remainingCredits: credits,
+        description: `Grant credit`,
+        expiresAt: expiresAt,
+        status: CreditStatus.ACTIVE,
+      };
+    }
+
+    await updateOrderInTransaction({
+      orderNo,
+      updateOrder,
+      newSubscription,
+      newCredit,
+    });
+  } else {
+    throw new Error("unknown payment status");
+  }
+}
+
+export async function handleSubscriptionRenewal({
+  subscription,
+  session,
+}: {
+  subscription: Subscription; // subscription
+  session: PaymentSession; // payment session
+}) {
+  const subscriptionNo = subscription.subscriptionNo;
+  if (!subscriptionNo || !subscription.amount || !subscription.currency) {
+    throw new Error("invalid subscription");
+  }
+
+  if (!session.subscriptionId || !session.subscriptionInfo) {
+    throw new Error("invalid payment session");
+  }
+  if (session.subscriptionId !== subscription.subscriptionId) {
+    throw new Error("subscription id mismatch");
+  }
+
+  const subscriptionInfo = session.subscriptionInfo;
+  if (
+    !subscriptionInfo ||
+    !subscriptionInfo.currentPeriodStart ||
+    !subscriptionInfo.currentPeriodEnd
+  ) {
+    throw new Error("invalid subscription info");
+  }
+
+  // payment success
+  if (session.paymentStatus === PaymentStatus.SUCCESS) {
+    // update subscription period
+    const updateSubscription: UpdateSubscription = {
+      currentPeriodStart: subscriptionInfo.currentPeriodStart,
+      currentPeriodEnd: subscriptionInfo.currentPeriodEnd,
+    };
+
+    const orderNo = getSnowId();
+    const currentTime = new Date();
+
+    // renewal order
+    const order: NewOrder = {
+      id: getUuid(),
+      orderNo: orderNo,
+      userId: subscription.userId,
+      userEmail: subscription.userEmail,
+      status: OrderStatus.PAID,
+      amount: subscription.amount,
+      currency: subscription.currency,
+      productId: subscription.productId,
+      paymentType: PaymentType.RENEW,
+      paymentInterval: subscription.interval,
+      paymentProvider: session.provider || subscription.paymentProvider,
+      checkoutInfo: "",
+      createdAt: currentTime,
+      productName: subscription.productName,
+      description: "Subscription Renewal",
+      callbackUrl: "",
+      creditsAmount: subscription.creditsAmount,
+      creditsValidDays: subscription.creditsValidDays,
+      planName: subscription.planName || "",
+      paymentProductId: subscription.paymentProductId,
+      paymentResult: JSON.stringify(session.paymentResult),
+      paymentAmount: session.paymentInfo?.paymentAmount,
+      paymentCurrency: session.paymentInfo?.paymentCurrency,
+      paymentEmail: session.paymentInfo?.paymentEmail,
+      paidAt: session.paymentInfo?.paidAt,
+      invoiceId: session.paymentInfo?.invoiceId,
+      invoiceUrl: session.paymentInfo?.invoiceUrl,
+      subscriptionNo: subscription.subscriptionNo,
+      transactionId: session.paymentInfo?.transactionId,
+      paymentUserName: session.paymentInfo?.paymentUserName,
+      subscriptionId: session.subscriptionId,
+      subscriptionResult: JSON.stringify(session.subscriptionResult),
+    };
+
+    // grant credit for renewal order
+    let newCredit: NewCredit | undefined = undefined;
+    if (order.creditsAmount && order.creditsAmount > 0) {
+      const credits = order.creditsAmount;
+      const expiresAt =
+        credits > 0
+          ? calculateCreditExpirationTime({
+              creditsValidDays: order.creditsValidDays || 0,
+              currentPeriodEnd: subscriptionInfo?.currentPeriodEnd,
+            })
+          : null;
+
+      newCredit = {
+        id: getUuid(),
+        userId: order.userId,
+        userEmail: order.userEmail,
+        orderNo: order.orderNo,
+        subscriptionNo: subscription.subscriptionNo,
+        transactionNo: getSnowId(),
+        transactionType: CreditTransactionType.GRANT,
+        transactionScene:
+          order.paymentType === PaymentType.SUBSCRIPTION
+            ? CreditTransactionScene.SUBSCRIPTION
+            : CreditTransactionScene.PAYMENT,
+        credits: credits,
+        remainingCredits: credits,
+        description: `Grant credit`,
+        expiresAt: expiresAt,
+        status: CreditStatus.ACTIVE,
+      };
+    }
+
+    await updateSubscriptionInTransaction({
+      subscriptionNo,
+      updateSubscription,
+      newOrder: order,
+      newCredit,
+    });
+  } else {
+    throw new Error("unknown payment status");
+  }
 }

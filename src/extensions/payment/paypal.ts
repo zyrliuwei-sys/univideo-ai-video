@@ -1,10 +1,12 @@
 import {
   PaymentProvider,
   PaymentConfigs,
-  PaymentRequest,
+  PaymentOrder,
   PaymentSession,
-  PaymentWebhookResult,
+  PaymentEvent,
   PaymentStatus,
+  PaymentType,
+  CheckoutSession,
 } from ".";
 
 /**
@@ -39,29 +41,24 @@ export class PayPalProvider implements PaymentProvider {
   }
 
   // create payment
-  async createPayment(request: PaymentRequest): Promise<PaymentSession> {
-    if (request.type === "subscription") {
-      return this.createSubscriptionPayment(request);
-    } else {
-      return this.createOneTimePayment(request);
-    }
-  }
-
-  // create one time payment
-  async createOneTimePayment(request: PaymentRequest): Promise<PaymentSession> {
+  async createPayment({
+    order,
+  }: {
+    order: PaymentOrder;
+  }): Promise<CheckoutSession> {
     try {
       await this.ensureAccessToken();
 
-      if (!request.price) {
+      if (!order.price) {
         throw new Error("price is required");
       }
 
       const items = [
         {
-          name: request.description || "Payment",
+          name: order.description || "Payment",
           unit_amount: {
-            currency_code: request.price.currency.toUpperCase(),
-            value: (request.price.amount / 100).toFixed(2), // unit: dollars
+            currency_code: order.price.currency.toUpperCase(),
+            value: (order.price.amount / 100).toFixed(2), // unit: dollars
           },
           quantity: "1",
         },
@@ -78,11 +75,11 @@ export class PayPalProvider implements PaymentProvider {
           {
             items,
             amount: {
-              currency_code: request.price.currency.toUpperCase(),
+              currency_code: order.price.currency.toUpperCase(),
               value: totalAmount.toFixed(2),
               breakdown: {
                 item_total: {
-                  currency_code: request.price.currency.toUpperCase(),
+                  currency_code: order.price.currency.toUpperCase(),
                   value: totalAmount.toFixed(2),
                 },
               },
@@ -90,8 +87,8 @@ export class PayPalProvider implements PaymentProvider {
           },
         ],
         application_context: {
-          return_url: request.successUrl,
-          cancel_url: request.cancelUrl,
+          return_url: order.successUrl,
+          cancel_url: order.cancelUrl,
           user_action: "PAY_NOW",
         },
       };
@@ -103,11 +100,9 @@ export class PayPalProvider implements PaymentProvider {
       );
 
       if (result.error) {
-        return {
-          success: false,
-          error: result.error.message || "PayPal payment creation failed",
-          provider: this.name,
-        };
+        throw new Error(
+          result.error.message || "PayPal payment creation failed"
+        );
       }
 
       const approvalUrl = result.links?.find(
@@ -115,49 +110,34 @@ export class PayPalProvider implements PaymentProvider {
       )?.href;
 
       return {
-        success: true,
         provider: this.name,
         checkoutParams: payload,
         checkoutInfo: {
-          provider: this.name,
           sessionId: result.id,
           checkoutUrl: approvalUrl,
         },
         checkoutResult: result,
-        paymentStatus: this.mapPayPalStatus(result.status),
-        paymentInfo: {
-          discountCode: "",
-          discountAmount: undefined,
-          discountCurrency: undefined,
-          paymentAmount: totalAmount,
-          paymentCurrency: request.price.currency.toUpperCase(),
-          paymentEmail: request.customer?.email,
-          paidAt: new Date(),
-        },
+        metadata: order.metadata || {},
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        provider: this.name,
-      };
+      throw error;
     }
   }
 
   async createSubscriptionPayment(
-    request: PaymentRequest
-  ): Promise<PaymentSession> {
+    order: PaymentOrder
+  ): Promise<CheckoutSession> {
     try {
       await this.ensureAccessToken();
 
-      if (!request.plan) {
+      if (!order.plan) {
         throw new Error("plan is required");
       }
 
       // First create a product
       const productPayload = {
-        name: request.plan.name,
-        description: request.plan.description,
+        name: order.plan.name,
+        description: order.plan.description,
         type: "SERVICE",
         category: "SOFTWARE",
       };
@@ -169,32 +149,29 @@ export class PayPalProvider implements PaymentProvider {
       );
 
       if (productResponse.error) {
-        return {
-          success: false,
-          error:
-            productResponse.error.message || "PayPal product creation failed",
-          provider: this.name,
-        };
+        throw new Error(
+          productResponse.error.message || "PayPal product creation failed"
+        );
       }
 
       // Create a billing plan
       const planPayload = {
         product_id: productResponse.id,
-        name: request.plan.name,
-        description: request.plan.description,
+        name: order.plan.name,
+        description: order.plan.description,
         billing_cycles: [
           {
             frequency: {
-              interval_unit: request.plan.interval.toUpperCase(),
-              interval_count: request.plan.intervalCount || 1,
+              interval_unit: order.plan.interval.toUpperCase(),
+              interval_count: order.plan.intervalCount || 1,
             },
             tenure_type: "REGULAR",
             sequence: 1,
             total_cycles: 0, // Infinite
             pricing_scheme: {
               fixed_price: {
-                value: request.price?.amount.toFixed(2),
-                currency_code: request.price?.currency.toUpperCase(),
+                value: order.price?.amount.toFixed(2),
+                currency_code: order.price?.currency.toUpperCase(),
               },
             },
           },
@@ -207,7 +184,7 @@ export class PayPalProvider implements PaymentProvider {
       };
 
       // Add trial period if specified
-      if (request.plan?.trialPeriodDays) {
+      if (order.plan?.trialPeriodDays) {
         planPayload.billing_cycles.unshift({
           frequency: {
             interval_unit: "DAY",
@@ -215,11 +192,11 @@ export class PayPalProvider implements PaymentProvider {
           },
           tenure_type: "TRIAL",
           sequence: 0,
-          total_cycles: request.plan?.trialPeriodDays || 0,
+          total_cycles: order.plan?.trialPeriodDays || 0,
           pricing_scheme: {
             fixed_price: {
               value: "0.00",
-              currency_code: request.price?.currency.toUpperCase(),
+              currency_code: order.price?.currency.toUpperCase(),
             },
           },
         });
@@ -232,22 +209,20 @@ export class PayPalProvider implements PaymentProvider {
       );
 
       if (planResponse.error) {
-        return {
-          success: false,
-          error: planResponse.error.message || "PayPal plan creation failed",
-          provider: this.name,
-        };
+        throw new Error(
+          planResponse.error.message || "PayPal plan creation failed"
+        );
       }
 
       // Create subscription
       const subscriptionPayload = {
         plan_id: planResponse.id,
         subscriber: {
-          email_address: request.customer?.email,
-          name: request.customer?.name
+          email_address: order.customer?.email,
+          name: order.customer?.name
             ? {
-                given_name: request.customer?.name.split(" ")[0],
-                surname: request.customer?.name.split(" ").slice(1).join(" "),
+                given_name: order.customer?.name.split(" ")[0],
+                surname: order.customer?.name.split(" ").slice(1).join(" "),
               }
             : undefined,
         },
@@ -260,8 +235,8 @@ export class PayPalProvider implements PaymentProvider {
             payer_selected: "PAYPAL",
             payee_preferred: "IMMEDIATE_PAYMENT_REQUIRED",
           },
-          return_url: request.successUrl,
-          cancel_url: request.cancelUrl,
+          return_url: order.successUrl,
+          cancel_url: order.cancelUrl,
         },
       };
 
@@ -272,13 +247,10 @@ export class PayPalProvider implements PaymentProvider {
       );
 
       if (subscriptionResponse.error) {
-        return {
-          success: false,
-          error:
-            subscriptionResponse.error.message ||
-            "PayPal subscription creation failed",
-          provider: this.name,
-        };
+        throw new Error(
+          subscriptionResponse.error.message ||
+            "PayPal subscription creation failed"
+        );
       }
 
       const approvalUrl = subscriptionResponse.links?.find(
@@ -286,7 +258,6 @@ export class PayPalProvider implements PaymentProvider {
       )?.href;
 
       return {
-        success: true,
         provider: this.name,
         checkoutParams: subscriptionPayload,
         checkoutInfo: {
@@ -294,17 +265,14 @@ export class PayPalProvider implements PaymentProvider {
           checkoutUrl: approvalUrl,
         },
         checkoutResult: subscriptionResponse,
+        metadata: order.metadata || {},
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        provider: this.name,
-      };
+      throw error;
     }
   }
 
-  async getPayment({
+  async getPaymentSession({
     sessionId,
   }: {
     sessionId?: string;
@@ -335,7 +303,6 @@ export class PayPalProvider implements PaymentProvider {
       }
 
       return {
-        success: true,
         provider: this.name,
         paymentStatus: this.mapPayPalStatus(result.status),
         paymentInfo: {
@@ -348,34 +315,27 @@ export class PayPalProvider implements PaymentProvider {
           paidAt: new Date(),
         },
         paymentResult: result,
+        metadata: result.metadata,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "get payment failed",
-        provider: this.name,
-      };
+      throw error;
     }
   }
 
-  async handleWebhook({
-    rawBody,
-    signature,
-    headers,
-  }: {
-    rawBody: string | Buffer;
-    signature?: string;
-    headers?: Record<string, string>;
-  }): Promise<PaymentWebhookResult> {
+  async getPaymentEvent({ req }: { req: Request }): Promise<PaymentEvent> {
     try {
+      const rawBody = await req.text();
+      const signature = req.headers.get("paypal-signature") as string;
+      const headers = Object.fromEntries(req.headers.entries());
+
       if (!this.configs.webhookSecret) {
         throw new Error("webhookSecret not configured");
       }
 
-      const payload =
-        typeof rawBody === "string"
-          ? JSON.parse(rawBody)
-          : JSON.parse(rawBody.toString());
+      const event = JSON.parse(rawBody);
+      if (!event || !event.event_type) {
+        throw new Error("Invalid webhook payload");
+      }
 
       // verify webhook with PayPal (simplified verification)
       await this.ensureAccessToken();
@@ -387,7 +347,7 @@ export class PayPalProvider implements PaymentProvider {
         transmission_sig: headers?.["paypal-transmission-sig"],
         transmission_time: headers?.["paypal-transmission-time"],
         webhook_id: this.configs.webhookSecret,
-        webhook_event: payload,
+        webhook_event: event,
       };
 
       const verifyResponse = await this.makeRequest(
@@ -401,21 +361,15 @@ export class PayPalProvider implements PaymentProvider {
       }
 
       // Process the webhook event
-      console.log(
-        `PayPal webhook event: ${payload.event_type}`,
-        payload.resource
-      );
+      console.log(`PayPal webhook event: ${event.event_type}`, event.resource);
 
       return {
-        success: true,
-        acknowledged: true,
+        eventType: event.event_type,
+        eventResult: event,
+        paymentSession: undefined,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        acknowledged: false,
-      };
+      throw error;
     }
   }
 

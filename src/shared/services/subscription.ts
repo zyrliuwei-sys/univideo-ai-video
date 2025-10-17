@@ -29,6 +29,34 @@ export async function createSubscription(newSubscription: NewSubscription) {
 }
 
 /**
+ * update subscription by subscription no
+ */
+export async function updateSubscriptionBySubscriptionNo(
+  subscriptionNo: string,
+  updateSubscription: UpdateSubscription
+) {
+  const [result] = await db()
+    .update(subscription)
+    .set(updateSubscription)
+    .where(eq(subscription.subscriptionNo, subscriptionNo))
+    .returning();
+
+  return result;
+}
+
+export async function updateSubscriptionById(
+  id: string,
+  updateSubscription: UpdateSubscription
+) {
+  const [result] = await db()
+    .update(subscription)
+    .set(updateSubscription)
+    .where(eq(subscription.id, id))
+    .returning();
+  return result;
+}
+
+/**
  * find subscription by id
  */
 export async function findSubscriptionById(id: string) {
@@ -48,6 +76,26 @@ export async function findSubscriptionBySubscriptionNo(subscriptionNo: string) {
     .select()
     .from(subscription)
     .where(eq(subscription.subscriptionNo, subscriptionNo));
+
+  return result;
+}
+
+export async function findSubscriptionByProviderSubscriptionId({
+  provider,
+  subscriptionId,
+}: {
+  provider: string;
+  subscriptionId: string;
+}) {
+  const [result] = await db()
+    .select()
+    .from(subscription)
+    .where(
+      and(
+        eq(subscription.paymentProvider, provider),
+        eq(subscription.subscriptionId, subscriptionId)
+      )
+    );
 
   return result;
 }

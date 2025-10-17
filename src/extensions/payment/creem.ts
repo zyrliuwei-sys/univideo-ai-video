@@ -1,11 +1,13 @@
 import {
   PaymentProvider,
   PaymentConfigs,
-  PaymentRequest,
+  PaymentOrder,
   PaymentStatus,
   PaymentSession,
-  PaymentWebhookResult,
   PaymentInterval,
+  PaymentCustomField,
+  PaymentEvent,
+  CheckoutSession,
 } from ".";
 
 /**
@@ -14,7 +16,7 @@ import {
  */
 export interface CreemConfigs extends PaymentConfigs {
   apiKey: string;
-  webhookSecret?: string;
+  signingSecret?: string;
   environment?: "sandbox" | "production";
 }
 
@@ -37,39 +39,43 @@ export class CreemProvider implements PaymentProvider {
   }
 
   // create payment
-  async createPayment(request: PaymentRequest): Promise<PaymentSession> {
+  async createPayment({
+    order,
+  }: {
+    order: PaymentOrder;
+  }): Promise<CheckoutSession> {
     try {
-      if (!request.productId) {
+      if (!order.productId) {
         throw new Error("productId is required");
       }
 
       // build payment payload
       const payload: any = {
-        product_id: request.productId,
-        request_id: request.requestId || undefined,
+        product_id: order.productId,
+        request_id: order.requestId || undefined,
         units: 1,
-        discount_code: request.discount
+        discount_code: order.discount
           ? {
-              code: request.discount.code,
+              code: order.discount.code,
             }
           : undefined,
-        customer: request.customer
+        customer: order.customer
           ? {
-              id: request.customer.id,
-              email: request.customer.email,
+              id: order.customer.id,
+              email: order.customer.email,
             }
           : undefined,
-        custom_fields: request.customFields
-          ? request.customFields.map((customField) => ({
+        custom_fields: order.customFields
+          ? order.customFields.map((customField: PaymentCustomField) => ({
               type: customField.type,
               key: customField.name,
               label: customField.label,
-              optional: !customField.isRequired,
+              optional: !customField.isRequired as boolean,
               text: customField.metadata,
             }))
           : undefined,
-        success_url: request.successUrl,
-        metadata: request.metadata,
+        success_url: order.successUrl,
+        metadata: order.metadata,
       };
 
       const result = await this.makeRequest("/v1/checkouts", "POST", payload);
@@ -81,37 +87,28 @@ export class CreemProvider implements PaymentProvider {
 
       // create payment success
       return {
-        success: true,
         provider: this.name,
         checkoutParams: payload,
         checkoutInfo: {
-          provider: this.name,
           sessionId: result.id,
           checkoutUrl: result.checkout_url,
         },
         checkoutResult: result,
+        metadata: order.metadata || {},
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "create payment failed",
-        provider: this.name,
-      };
+      throw error;
     }
   }
 
   // get payment by session id
   // @docs https://docs.creem.io/api-reference/endpoint/get-checkout
-  async getPayment({
+  async getPaymentSession({
     sessionId,
   }: {
     sessionId: string;
   }): Promise<PaymentSession> {
     try {
-      if (!sessionId) {
-        throw new Error("sessionId is required");
-      }
-
       // retrieve payment
       const session = await this.makeRequest(
         `/v1/checkouts?checkout_id=${sessionId}`,
@@ -130,7 +127,6 @@ export class CreemProvider implements PaymentProvider {
       }
 
       const result: PaymentSession = {
-        success: true,
         provider: this.name,
         paymentStatus: this.mapCreemStatus(session),
         paymentInfo: {
@@ -145,6 +141,7 @@ export class CreemProvider implements PaymentProvider {
             : undefined,
         },
         paymentResult: session,
+        metadata: session.metadata,
       };
 
       if (subscription) {
@@ -177,60 +174,73 @@ export class CreemProvider implements PaymentProvider {
 
       return result;
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "get payment failed",
-        provider: this.name,
-      };
+      throw error;
     }
   }
 
-  async handleWebhook({
-    rawBody,
-    signature,
-    headers,
-  }: {
-    rawBody: string | Buffer;
-    signature?: string;
-    headers?: Record<string, string>;
-  }): Promise<PaymentWebhookResult> {
+  async getPaymentEvent({ req }: { req: Request }): Promise<PaymentEvent> {
     try {
-      if (!this.configs.webhookSecret) {
-        throw new Error("webhookSecret not configured");
+      const rawBody = await req.text();
+      const signature = req.headers.get("creem-signature") as string;
+
+      if (!rawBody || !signature) {
+        throw new Error("Invalid webhook request");
+      }
+
+      if (!this.configs.signingSecret) {
+        throw new Error("Signing Secret not configured");
+      }
+
+      const computedSignature = await this.generateSignature(
+        rawBody,
+        this.configs.signingSecret
+      );
+
+      if (computedSignature !== signature) {
+        throw new Error("Invalid webhook signature");
       }
 
       // parse the webhook payload
-      const payload =
-        typeof rawBody === "string"
-          ? JSON.parse(rawBody)
-          : JSON.parse(rawBody.toString());
-
-      // Verify webhook signature if provided
-      if (signature && this.configs.webhookSecret) {
-        const crypto = require("crypto");
-        const expectedSignature = crypto
-          .createHmac("sha256", this.configs.webhookSecret)
-          .update(rawBody)
-          .digest("hex");
-
-        if (signature !== expectedSignature) {
-          throw new Error("Invalid webhook signature");
-        }
+      const event = JSON.parse(rawBody);
+      if (!event || !event.eventType) {
+        throw new Error("Invalid webhook payload");
       }
 
-      // Process the webhook event
-      console.log(`Creem webhook event: ${payload.event_type}`, payload.data);
-
       return {
-        success: true,
-        acknowledged: true,
+        eventType: event.eventType,
+        eventResult: event,
+        paymentSession: undefined,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        acknowledged: false,
-      };
+      throw error;
+    }
+  }
+
+  private async generateSignature(
+    payload: string,
+    secret: string
+  ): Promise<string> {
+    try {
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(secret);
+      const messageData = encoder.encode(payload);
+
+      const key = await crypto.subtle.importKey(
+        "raw",
+        keyData,
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+
+      const signature = await crypto.subtle.sign("HMAC", key, messageData);
+
+      const signatureArray = new Uint8Array(signature);
+      return Array.from(signatureArray)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    } catch (error: any) {
+      throw new Error(`Failed to generate signature: ${error.message}`);
     }
   }
 

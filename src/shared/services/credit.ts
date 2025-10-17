@@ -28,34 +28,35 @@ export enum CreditTransactionType {
 export enum CreditTransactionScene {
   PAYMENT = "payment", // payment
   SUBSCRIPTION = "subscription", // subscription
+  RENEWAL = "renewal", // renewal
   GIFT = "gift", // gift
   AWARD = "award", // award
 }
 
 // Calculate credit expiration time based on order and subscription info
-export function calculateCreditExpirationTime(
-  order: Order,
-  subscription?: any
-): Date | null {
+export function calculateCreditExpirationTime({
+  creditsValidDays,
+  currentPeriodEnd,
+}: {
+  creditsValidDays: number;
+  currentPeriodEnd?: Date;
+}): Date | null {
   const now = new Date();
 
   // Check if credits should never expire
-  if (!order.creditsValidDays || order.creditsValidDays <= 0) {
+  if (!creditsValidDays || creditsValidDays <= 0) {
     // never expires
     return null;
   }
 
   const expiresAt = new Date();
 
-  if (
-    order.paymentType === PaymentType.SUBSCRIPTION &&
-    subscription?.currentPeriodEnd
-  ) {
+  if (currentPeriodEnd) {
     // For subscription: credits expire at the end of current period
-    expiresAt.setTime(subscription.currentPeriodEnd.getTime());
+    expiresAt.setTime(currentPeriodEnd.getTime());
   } else {
     // For one-time payment: use configured validity days
-    expiresAt.setDate(now.getDate() + order.creditsValidDays);
+    expiresAt.setDate(now.getDate() + creditsValidDays);
   }
 
   return expiresAt;
@@ -137,37 +138,6 @@ export async function getCreditsCount({
     );
 
   return result?.count || 0;
-}
-
-// grant credit for order after payment
-export async function grantCreditForOrder(order: Order, subscription?: any) {
-  // Calculate expiration time based on payment type
-  const expiresAt = calculateCreditExpirationTime(order, subscription);
-
-  // Get credits amount from order
-  const credits = order.creditsAmount || 0;
-  const remainingCredits = credits;
-
-  const newCredit: NewCredit = {
-    id: getUuid(),
-    userId: order.userId,
-    userEmail: order.userEmail,
-    orderNo: order.orderNo,
-    subscriptionId: order.subscriptionId,
-    transactionNo: getSnowId(),
-    transactionType: CreditTransactionType.GRANT,
-    transactionScene:
-      order.paymentType === PaymentType.SUBSCRIPTION
-        ? CreditTransactionScene.SUBSCRIPTION
-        : CreditTransactionScene.PAYMENT,
-    credits: credits,
-    remainingCredits: remainingCredits,
-    expiresAt: expiresAt,
-    status: CreditStatus.ACTIVE,
-    description: `Grant credit`,
-  };
-
-  return createCredit(newCredit);
 }
 
 // consume credits
