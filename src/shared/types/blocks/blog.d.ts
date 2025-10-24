@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 export interface Blog {
   id?: string;
   sr_only_title?: string;
@@ -23,7 +25,7 @@ export interface Post {
   url?: string;
   target?: string;
   categories?: Category[];
-  body?: any;
+  body?: ReactNode;
 }
 
 export interface Category {

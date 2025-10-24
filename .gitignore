@@ -60,3 +60,4 @@ src/config/db/migrations
 .test
 
 *.sql
+.source

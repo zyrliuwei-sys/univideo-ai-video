@@ -1,8 +1,10 @@
+import { getMDXComponents } from '@/mdx-components';
 import { and, count, desc, eq, like } from 'drizzle-orm';
+import { createRelativeLink } from 'fumadocs-ui/mdx';
 import moment from 'moment';
 
 import { db } from '@/core/db';
-import { postsSource } from '@/core/docs/source';
+import { pagesSource, postsSource } from '@/core/docs/source';
 import { post } from '@/config/db/schema';
 import {
   Category as BlogCategoryType,
@@ -173,38 +175,104 @@ export async function getPost({
   }
 
   // get post from locale file
+  const localPost = await getLocalPost({ slug, locale, postPrefix });
+
+  return localPost;
+}
+
+export async function getLocalPost({
+  slug,
+  locale,
+  postPrefix = '/blog/',
+}: {
+  slug: string;
+  locale: string;
+  postPrefix?: string;
+}): Promise<BlogPostType | null> {
   const localPost = await postsSource.getPage([slug], locale);
-  if (localPost) {
-    const frontmatter = localPost.data as any;
-
-    const slug = getPostSlug({
-      url: localPost.url,
-      locale,
-      prefix: postPrefix,
-    });
-
-    post = {
-      id: localPost.path,
-      slug: slug,
-      title: localPost.data.title || '',
-      description: localPost.data.description || '',
-      content: removePostFrontmatter(localPost.data.content || ''),
-      created_at: frontmatter.created_at
-        ? getPostDate({
-            created_at: frontmatter.created_at,
-            locale,
-          })
-        : '',
-      author_name: frontmatter.author_name || '',
-      author_image: frontmatter.author_image || '',
-      author_role: '',
-      url: `${postPrefix}${slug}`,
-    };
-
-    return post;
+  if (!localPost) {
+    return null;
   }
 
-  return null;
+  const MDXContent = localPost.data.body;
+  const body = (
+    <MDXContent
+      components={getMDXComponents({
+        // this allows you to link to other pages with relative file paths
+        a: createRelativeLink(postsSource, localPost),
+      })}
+    />
+  );
+
+  const frontmatter = localPost.data as any;
+
+  const post: BlogPostType = {
+    id: localPost.path,
+    slug: slug,
+    title: localPost.data.title || '',
+    description: localPost.data.description || '',
+    content: '',
+    body: body,
+    created_at: frontmatter.created_at
+      ? getPostDate({
+          created_at: frontmatter.created_at,
+          locale,
+        })
+      : '',
+    author_name: frontmatter.author_name || '',
+    author_image: frontmatter.author_image || '',
+    author_role: '',
+    url: `${postPrefix}${slug}`,
+  };
+
+  return post;
+}
+
+// get local page from: content/pages/*.md
+export async function getLocalPage({
+  slug,
+  locale,
+}: {
+  slug: string;
+  locale: string;
+}): Promise<BlogPostType | null> {
+  const localPage = await pagesSource.getPage([slug], locale);
+  if (!localPage) {
+    return null;
+  }
+
+  const MDXContent = localPage.data.body;
+  const body = (
+    <MDXContent
+      components={getMDXComponents({
+        // this allows you to link to other pages with relative file paths
+        a: createRelativeLink(pagesSource, localPage),
+      })}
+    />
+  );
+
+  const frontmatter = localPage.data as any;
+
+  const post: BlogPostType = {
+    id: localPage.path,
+    slug: slug,
+    title: localPage.data.title || '',
+    description: localPage.data.description || '',
+    content: '',
+    body: body,
+    created_at: frontmatter.created_at
+      ? getPostDate({
+          created_at: frontmatter.created_at,
+          locale,
+        })
+      : '',
+    author_name: frontmatter.author_name || '',
+    author_image: frontmatter.author_image || '',
+    author_role: '',
+    url: `/${locale}/${slug}`,
+  };
+
+  return post;
 }
 
 // get posts and categories, both from local files and database
@@ -439,7 +507,7 @@ export function getPostSlug({
   return url;
 }
 
-function getPostDate({
+export function getPostDate({
   created_at,
   locale,
 }: {

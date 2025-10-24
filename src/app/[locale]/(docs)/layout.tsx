@@ -7,7 +7,7 @@ import { source } from '@/core/docs/source';
 
 import { baseOptions } from './layout.config';
 
-import './style.css';
+import '@/config/style/docs.css';
 
 const zh: Partial<Translations> = {
   search: '搜索内容',

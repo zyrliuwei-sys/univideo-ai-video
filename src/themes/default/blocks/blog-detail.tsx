@@ -13,6 +13,8 @@ import { Crumb } from '@/shared/blocks/common/crumb';
 import { type Post as PostType } from '@/shared/types/blocks/blog';
 import { NavItem } from '@/shared/types/blocks/common';
 
+import '@/config/style/docs.css';
+
 export function BlogDetail({ post }: { post: PostType }) {
   const t = useTranslations('blog.page');
 
@@ -149,10 +151,16 @@ export function BlogDetail({ post }: { post: PostType }) {
             {/* Main Content - Center */}
             <div className={getMainColSpan()}>
               <article className="p-0">
-                {post.content && (
-                  <div className="prose prose-lg text-muted-foreground max-w-none space-y-6 *:leading-relaxed">
-                    <MarkdownPreview content={post.content} />
+                {post.body ? (
+                  <div className="docs text-foreground text-md my-8 space-y-4 font-normal *:leading-relaxed">
+                    {post.body}
                   </div>
+                ) : (
+                  post.content && (
+                    <div className="prose prose-lg text-muted-foreground max-w-none space-y-6 *:leading-relaxed">
+                      <MarkdownPreview content={post.content} />
+                    </div>
+                  )
                 )}
               </article>
             </div>

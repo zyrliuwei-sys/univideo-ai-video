@@ -3,6 +3,8 @@ import { CalendarIcon, TimerIcon } from 'lucide-react';
 import { MarkdownPreview } from '@/shared/blocks/common';
 import { type Post as PostType } from '@/shared/types/blocks/blog';
 
+import '@/config/style/docs.css';
+
 export async function PageDetail({ post }: { post: PostType }) {
   return (
     <section id={post.id}>
@@ -25,7 +27,7 @@ export async function PageDetail({ post }: { post: PostType }) {
           <div className="ring-foreground/5 relative mt-8 rounded-3xl border border-transparent px-4 shadow ring-1 md:px-8">
             <div>
               {post.body ? (
-                <div className="text-foreground text-md my-8 space-y-4 font-normal *:leading-relaxed">
+                <div className="docs text-foreground text-md my-8 space-y-4 font-normal *:leading-relaxed">
                   {post.body}
                 </div>
               ) : (
