@@ -127,6 +127,10 @@
     "image_invert": {
       "src": "/imgs/features/admin-dark.png",
       "alt": "hero"
+    },
+    "background_image": {
+      "src": "/imgs/bg/tree.jpg",
+      "alt": "hero"
     }
   },
   "logos": {

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
 
-import { SmartIcon } from '@/shared/blocks/common/smart-icon';
+import { LazyImage, SmartIcon } from '@/shared/blocks/common';
 import { BorderBeam } from '@/shared/components/magicui/border-beam';
 import {
   Accordion,
@@ -13,19 +12,19 @@ import {
   AccordionTrigger,
 } from '@/shared/components/ui/accordion';
 import { ScrollAnimation } from '@/shared/components/ui/scroll-animation';
-import { Features as FeaturesType } from '@/shared/types/blocks/landing';
+import { Section } from '@/shared/types/blocks/landing';
 
 export function FeaturesAccordion({
-  features,
+  section,
   className,
 }: {
-  features: FeaturesType;
+  section: Section;
   className?: string;
 }) {
   const [activeItem, setActiveItem] = useState<string>('item-1');
 
   const images: any = {};
-  features.items?.forEach((item, idx) => {
+  section.items?.forEach((item, idx) => {
     images[`item-${idx + 1}`] = {
       image: item.image?.src ?? '',
       alt: item.image?.alt || item.title || '',
@@ -41,10 +40,10 @@ export function FeaturesAccordion({
         <ScrollAnimation>
           <div className="mx-auto max-w-4xl text-center text-balance">
             <h2 className="text-foreground mb-4 text-3xl font-semibold tracking-tight md:text-4xl">
-              {features.title}
+              {section.title}
             </h2>
             <p className="text-muted-foreground mb-6 md:mb-12 lg:mb-16">
-              {features.description}
+              {section.description}
             </p>
           </div>
         </ScrollAnimation>
@@ -58,7 +57,7 @@ export function FeaturesAccordion({
               onValueChange={(value) => setActiveItem(value as string)}
               className="w-full"
             >
-              {features.items?.map((item, idx) => (
+              {section.items?.map((item, idx) => (
                 <AccordionItem value={`item-${idx + 1}`} key={idx}>
                   <AccordionTrigger>
                     <div className="flex items-center gap-2 text-base">
@@ -86,16 +85,12 @@ export function FeaturesAccordion({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.98 }}
                     transition={{ duration: 0.2 }}
-                    className="size-full overflow-hidden rounded-2xl border bg-zinc-900 shadow-md"
+                    className="size-full overflow-hidden rounded-2xl border shadow-md"
                   >
-                    <Image
+                    <LazyImage
                       src={images[activeItem].image}
                       className="size-full object-cover object-left-top dark:mix-blend-lighten"
                       alt={images[activeItem].alt}
-                      width={1207}
-                      height={929}
-                      // prevent img from exceeding parent
-                      style={{ maxWidth: '100%', height: 'auto' }}
                     />
                   </motion.div>
                 </AnimatePresence>

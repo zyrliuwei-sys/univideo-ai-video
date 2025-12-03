@@ -29,8 +29,8 @@ export default async function AiVideoGeneratorPage({
         className="mt-16 -mb-32"
       />
       <VideoGenerator srOnlyTitle={tt.raw('generator.title')} />
-      <FAQ faq={t.raw('faq')} />
-      <CTA cta={t.raw('cta')} className="bg-muted" />
+      <FAQ section={t.raw('faq')} />
+      <CTA section={t.raw('cta')} className="bg-muted" />
     </>
   );
 }
