@@ -40,6 +40,10 @@ Recommended placeholder source:
 
 - `https://picsum.photos/seed/<seed>/<width>/<height>`
 
+Notes:
+
+- `<seed>` must be a **single string path segment** (no `/`). If your route slug contains `/`, convert it to a single token like `features-ai-image-generator-hero`.
+
 In this repo, blocks will auto-set `unoptimized` for `http(s)://` images, so placeholders work without Next.js image domain configuration.
 
 ## JSON shape (minimal)

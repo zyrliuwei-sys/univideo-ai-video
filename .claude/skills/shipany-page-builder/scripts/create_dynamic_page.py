@@ -121,9 +121,26 @@ def _parse_csv(value: str) -> list[str]:
 def _todo(s: str) -> str:
     return f"TODO: {s}"
 
+def _picsum_seedify(value: str) -> str:
+    """
+    picsum.photos seed must be a single URL path segment (no slashes).
+    Convert arbitrary strings (e.g. "foo/bar") into a safe segment.
+    """
+    s = (value or "").strip()
+    if not s:
+        s = "seed"
+    # Replace path separators and whitespace with hyphens.
+    s = re.sub(r"[\/\s]+", "-", s)
+    # Keep only URL-safe-ish characters for a path segment.
+    s = re.sub(r"[^A-Za-z0-9._-]+", "-", s)
+    # Collapse repeats and trim.
+    s = re.sub(r"-{2,}", "-", s).strip("-")
+    return s or "seed"
+
 def _picsum_seed_url(seed: str, w: int, h: int) -> str:
     # Deterministic placeholder image.
-    return f"https://picsum.photos/seed/{seed}/{w}/{h}"
+    safe_seed = _picsum_seedify(seed)
+    return f"https://picsum.photos/seed/{safe_seed}/{w}/{h}"
 
 
 def _build_page_payload(
