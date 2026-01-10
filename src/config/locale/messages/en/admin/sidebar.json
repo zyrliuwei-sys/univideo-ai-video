@@ -1,10 +1,10 @@
 {
   "header": {
     "brand": {
-      "title": "ShipAny Two",
+      "title": "Univideo AI Two",
       "logo": {
         "src": "/logo.png",
-        "alt": "ShipAny Two"
+        "alt": "Univideo AI Two"
       },
       "url": "/admin"
     },

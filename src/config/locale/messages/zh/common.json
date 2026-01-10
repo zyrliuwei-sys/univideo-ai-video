@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "ShipAny 模板二",
-    "description": "ShipAny 是用于构建 AI SaaS 创业项目的 NextJS 脚手架。提供丰富模板和组件，助您快速上线产品。",
-    "keywords": "shipany, shipany-boilerplate, shipany-template-two-demo"
+    "title": "Univideo AI - AI 视频生产平台",
+    "description": "Univideo AI 是一个先进的 AI 视频生产平台。体验最新的 AI 视频生成功能 - 看视频、听声音、读文字、做理解与推理。",
+    "keywords": "univideo, univideo ai, ai 视频生成, ai 视频制作, 视频ai"
   },
   "sign": {
     "sign_in_title": "登录",
