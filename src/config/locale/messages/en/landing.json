@@ -14,9 +14,9 @@
     "nav": {
       "items": [
         {
-          "title": "Features",
-          "url": "/#features",
-          "icon": "Sparkles"
+          "title": "chatbot",
+          "url": "/chat",
+          "icon": "RiImage2Line"
         },
         {
           "title": "Showcases",
