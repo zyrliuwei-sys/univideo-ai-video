@@ -168,7 +168,7 @@
               {
                 "currency": "USD",
                 "amount": 154800,
-                "price": "$129",
+                "price": "$20",
                 "original_price": "$169",
                 "payment_providers": ["stripe", "creem"],
                 "productId": "standard-yearly"
