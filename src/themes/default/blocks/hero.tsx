@@ -83,7 +83,7 @@ export function Hero({
                 asChild
                 size={button.size || 'default'}
                 variant={button.variant || 'default'}
-                className="px-4 text-sm"
+                className={button.size === 'lg' ? 'px-8 py-6 text-base' : 'px-4 text-sm'}
                 key={idx}
               >
                 <Link href={button.url ?? ''} target={button.target ?? '_self'}>

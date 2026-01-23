@@ -19,11 +19,6 @@
           "icon": "RiImage2Line"
         },
         {
-          "title": "Showcases",
-          "url": "/showcases",
-          "icon": "Video"
-        },
-        {
           "title": "Pricing",
           "url": "/pricing",
           "icon": "DollarSign"

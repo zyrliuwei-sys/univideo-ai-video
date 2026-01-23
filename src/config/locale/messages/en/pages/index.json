@@ -26,18 +26,12 @@
         "tip": "🎁 Try for free - No credit card required",
         "buttons": [
           {
-            "title": "Start Creating",
+            "title": "Generate Video Now",
             "icon": "Zap",
             "url": "/ai-video-generator",
             "target": "_self",
-            "variant": "default"
-          },
-          {
-            "title": "View Examples",
-            "icon": "Video",
-            "url": "/showcases",
-            "target": "_self",
-            "variant": "outline"
+            "variant": "default",
+            "size": "lg"
           }
         ],
         "show_avatars": true,

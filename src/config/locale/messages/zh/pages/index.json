@@ -26,18 +26,12 @@
         "tip": "🎁 免费试用 - 无需信用卡",
         "buttons": [
           {
-            "title": "开始创作",
+            "title": "立即生成视频",
             "icon": "Zap",
             "url": "/ai-video-generator",
             "target": "_self",
-            "variant": "default"
-          },
-          {
-            "title": "查看案例",
-            "icon": "Video",
-            "url": "/showcases",
-            "target": "_self",
-            "variant": "outline"
+            "variant": "default",
+            "size": "lg"
           }
         ],
         "show_avatars": true,

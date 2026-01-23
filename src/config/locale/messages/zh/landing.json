@@ -19,11 +19,6 @@
           "icon": "Sparkles"
         },
         {
-          "title": "案例展示",
-          "url": "/showcases",
-          "icon": "Video"
-        },
-        {
           "title": "价格",
           "url": "/pricing",
           "icon": "DollarSign"
