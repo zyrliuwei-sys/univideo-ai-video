@@ -45,10 +45,13 @@ export function FeaturesAccordion({
       <div className="container space-y-8 overflow-x-hidden px-2 sm:px-6 md:space-y-16 lg:space-y-20 dark:[--color-border:color-mix(in_oklab,var(--color-white)_10%,transparent)]">
         <ScrollAnimation>
           <div className="mx-auto max-w-4xl text-center text-balance">
-            <h2 className="text-foreground mb-4 text-3xl font-semibold tracking-tight md:text-4xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+              {section.label || 'Benefits'}
+            </div>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-white">
               {section.title}
             </h2>
-            <p className="text-muted-foreground mb-6 md:mb-12 lg:mb-16">
+            <p className="mt-6 text-lg text-slate-600 dark:text-slate-300">
               {section.description}
             </p>
           </div>
@@ -61,19 +64,27 @@ export function FeaturesAccordion({
               type="single"
               value={activeItem}
               onValueChange={(value) => setActiveItem(value as string)}
-              className="w-full"
+              className="w-full space-y-4"
             >
               {section.items?.map((item, idx) => (
-                <AccordionItem value={`item-${idx + 1}`} key={idx}>
-                  <AccordionTrigger>
-                    <div className="flex items-center gap-2 text-base">
+                <AccordionItem
+                  value={`item-${idx + 1}`}
+                  key={idx}
+                  className="rounded-2xl border border-black/10 bg-white/80 px-6 py-1 shadow-[0_18px_45px_-35px_rgba(15,23,42,0.4)] backdrop-blur transition dark:border-white/10 dark:bg-white/5"
+                >
+                  <AccordionTrigger className="cursor-pointer text-base text-slate-900 hover:no-underline dark:text-white">
+                    <div className="flex items-center gap-3">
                       {item.icon && (
-                        <SmartIcon name={item.icon as string} size={24} />
+                        <span className="flex size-9 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900">
+                          <SmartIcon name={item.icon as string} size={18} />
+                        </span>
                       )}
-                      {item.title}
+                      <span className="font-semibold">{item.title}</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent>{item.description}</AccordionContent>
+                  <AccordionContent className="text-slate-600 dark:text-slate-300">
+                    {item.description}
+                  </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
@@ -81,9 +92,9 @@ export function FeaturesAccordion({
 
           <ScrollAnimation delay={0.2} direction="right">
             {/* min-w-0/flex-shrink to prevent overflow */}
-            <div className="bg-background relative flex min-w-0 flex-shrink overflow-hidden rounded-3xl border p-2">
-              <div className="absolute inset-0 right-0 ml-auto w-15 border-l bg-[repeating-linear-gradient(-45deg,var(--color-border),var(--color-border)_1px,transparent_1px,transparent_8px)]"></div>
-              <div className="bg-background relative aspect-76/59 w-full min-w-0 rounded-2xl sm:w-[calc(3/4*100%+3rem)]">
+            <div className="relative flex min-w-0 flex-shrink overflow-hidden rounded-[2.5rem] border border-black/10 bg-white/70 p-3 shadow-[0_35px_70px_-50px_rgba(15,23,42,0.5)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+              <div className="absolute inset-0 right-0 ml-auto w-20 border-l border-white/40 bg-[repeating-linear-gradient(-45deg,rgba(15,23,42,0.1),rgba(15,23,42,0.1)_1px,transparent_1px,transparent_8px)] dark:border-white/10 dark:bg-[repeating-linear-gradient(-45deg,rgba(255,255,255,0.08),rgba(255,255,255,0.08)_1px,transparent_1px,transparent_8px)]"></div>
+              <div className="relative aspect-76/59 w-full min-w-0 rounded-[2rem] sm:w-[calc(3/4*100%+3rem)]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={`${activeItem}-id`}
@@ -91,11 +102,11 @@ export function FeaturesAccordion({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.98 }}
                     transition={{ duration: 0.2 }}
-                    className="size-full overflow-hidden rounded-2xl border shadow-md"
+                    className="size-full overflow-hidden rounded-[1.8rem] border border-black/10 shadow-md dark:border-white/10"
                   >
                     <LazyImage
                       src={images[activeItem].image}
-                      className="size-full object-cover object-left-top dark:mix-blend-lighten"
+                      className="size-full object-cover object-left-top"
                       alt={images[activeItem].alt}
                     />
                   </motion.div>
@@ -104,7 +115,7 @@ export function FeaturesAccordion({
               <BorderBeam
                 duration={6}
                 size={200}
-                className="from-transparent via-yellow-700 to-transparent dark:via-white/50"
+                className="from-transparent via-slate-400/50 to-transparent dark:via-white/30"
               />
             </div>
           </ScrollAnimation>

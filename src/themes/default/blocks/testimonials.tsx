@@ -13,12 +13,12 @@ export function Testimonials({
 }) {
   const TestimonialCard = ({ item }: { item: SectionItem }) => {
     return (
-      <div className="bg-card/25 ring-foreground/[0.07] flex flex-col justify-end gap-6 rounded-(--radius) border border-transparent p-8 ring-1">
-        <p className='text-foreground self-end text-balance before:mr-1 before:content-["\201C"] after:ml-1 after:content-["\201D"]'>
+      <div className="flex h-full flex-col justify-between gap-6 rounded-[2rem] border border-black/10 bg-white/80 p-8 shadow-[0_25px_60px_-45px_rgba(15,23,42,0.5)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+        <p className='text-balance text-slate-700 before:mr-1 before:content-["\201C"] after:ml-1 after:content-["\201D"] dark:text-slate-200'>
           {item.quote || item.description}
         </p>
         <div className="flex items-center gap-3">
-          <div className="ring-foreground/10 aspect-square size-9 overflow-hidden rounded-lg border border-transparent shadow-md ring-1 shadow-black/15">
+          <div className="aspect-square size-10 overflow-hidden rounded-xl border border-black/10 shadow-sm dark:border-white/10">
             <LazyImage
               src={item.image?.src || item.avatar?.src || ''}
               alt={item.image?.alt || item.avatar?.alt || item.name || ''}
@@ -29,8 +29,10 @@ export function Testimonials({
             {item.name}, {item.role || item.title}
           </h3>
           <div className="space-y-px">
-            <p className="text-sm font-medium">{item.name} </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              {item.name}{' '}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {item.role || item.title}
             </p>
           </div>
@@ -47,17 +49,20 @@ export function Testimonials({
       <div className="container">
         <ScrollAnimation>
           <div className="mx-auto max-w-2xl text-center text-balance">
-            <h2 className="text-foreground mb-4 text-3xl font-semibold tracking-tight md:text-4xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+              {section.label || 'Testimonials'}
+            </div>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-white">
               {section.title}
             </h2>
-            <p className="text-muted-foreground mb-6 md:mb-12 lg:mb-16">
+            <p className="mt-6 text-lg text-slate-600 dark:text-slate-300">
               {section.description}
             </p>
           </div>
         </ScrollAnimation>
         <ScrollAnimation delay={0.2}>
-          <div className="border-border/50 relative rounded-(--radius)">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-px lg:*:nth-1:rounded-t-none lg:*:nth-2:rounded-tl-none lg:*:nth-2:rounded-br-none lg:*:nth-3:rounded-l-none lg:*:nth-4:rounded-r-none lg:*:nth-5:rounded-tl-none lg:*:nth-5:rounded-br-none lg:*:nth-6:rounded-b-none">
+          <div className="relative">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {section.items?.map((item, index) => (
                 <TestimonialCard key={index} item={item} />
               ))}

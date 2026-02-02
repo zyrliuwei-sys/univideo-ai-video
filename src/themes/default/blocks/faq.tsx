@@ -21,10 +21,13 @@ export function Faq({
       <div className={`mx-auto max-w-full px-4 md:max-w-3xl md:px-8`}>
         <ScrollAnimation>
           <div className="mx-auto max-w-2xl text-center text-balance">
-            <h2 className="text-foreground mb-4 text-3xl font-semibold tracking-tight md:text-4xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+              {section.label || 'FAQ'}
+            </div>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl dark:text-white">
               {section.title}
             </h2>
-            <p className="text-muted-foreground mb-6 md:mb-12 lg:mb-16">
+            <p className="mt-6 text-lg text-slate-600 dark:text-slate-300">
               {section.description}
             </p>
           </div>
@@ -35,30 +38,28 @@ export function Faq({
             <Accordion
               type="single"
               collapsible
-              className="bg-muted dark:bg-muted/50 w-full rounded-2xl p-1"
+              className="w-full space-y-4"
             >
               {section.items?.map((item, idx) => (
-                <div className="group" key={idx}>
-                  <AccordionItem
-                    value={item.question || item.title || ''}
-                    className="data-[state=open]:bg-card dark:data-[state=open]:bg-muted peer rounded-xl border-none px-7 py-1 data-[state=open]:border-none data-[state=open]:shadow-sm"
-                  >
-                    <AccordionTrigger className="cursor-pointer text-base hover:no-underline">
-                      {item.question || item.title || ''}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p className="text-base">
-                        {item.answer || item.description || ''}
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <hr className="mx-7 border-dashed group-last:hidden peer-data-[state=open]:opacity-0" />
-                </div>
+                <AccordionItem
+                  key={idx}
+                  value={item.question || item.title || ''}
+                  className="rounded-[1.75rem] border border-black/10 bg-white/80 px-6 py-1 shadow-[0_20px_55px_-45px_rgba(15,23,42,0.45)] backdrop-blur-xl transition dark:border-white/10 dark:bg-white/5"
+                >
+                  <AccordionTrigger className="cursor-pointer text-base text-slate-900 hover:no-underline dark:text-white">
+                    {item.question || item.title || ''}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-slate-600 dark:text-slate-300">
+                    <p className="text-base">
+                      {item.answer || item.description || ''}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
               ))}
             </Accordion>
 
             <p
-              className="text-muted-foreground mt-6 px-8"
+              className="mt-6 px-2 text-sm text-slate-500 dark:text-slate-400"
               dangerouslySetInnerHTML={{ __html: section.tip || '' }}
             />
           </div>

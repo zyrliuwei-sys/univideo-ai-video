@@ -24,31 +24,55 @@ export function FeaturesList({
       )}
     >
       <div className="container overflow-x-hidden">
-        <div className="flex flex-wrap items-center gap-8 pb-12 md:gap-24">
-          <ScrollAnimation direction="left">
-            <div className="mx-auto w-full max-w-[500px] flex-shrink-0 md:mx-0">
-              <LazyImage
-                src={section.image?.src ?? ''}
-                alt={section.image?.alt ?? ''}
-                className="h-auto w-full rounded-lg object-cover"
-              />
-            </div>
-          </ScrollAnimation>
+        <div className="flex flex-wrap items-center gap-10 pb-14 md:gap-24">
+          {section.image?.src ? (
+            <ScrollAnimation direction="left">
+              <div className="mx-auto w-full max-w-[520px] flex-shrink-0 md:mx-0">
+                <div className="rounded-[2rem] border border-black/10 bg-white/70 p-3 shadow-[0_30px_70px_-45px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+                  <LazyImage
+                    src={section.image?.src ?? ''}
+                    alt={section.image?.alt ?? ''}
+                    className="h-auto w-full rounded-[1.5rem] object-cover"
+                  />
+                </div>
+              </div>
+            </ScrollAnimation>
+          ) : null}
           <div className="w-full min-w-0 flex-1">
             <ScrollAnimation delay={0.1}>
-              <h2 className={cn("text-foreground text-4xl font-semibold text-balance break-words", section.text_align === "center" ? "text-center" : "")}>
+              <div
+                className={cn(
+                  'text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400',
+                  section.text_align === 'center' ? 'text-center' : ''
+                )}
+              >
+                {section.label || 'Overview'}
+              </div>
+            </ScrollAnimation>
+            <ScrollAnimation delay={0.2}>
+              <h2
+                className={cn(
+                  'mt-4 text-4xl font-semibold tracking-tight text-balance text-slate-900 md:text-5xl dark:text-white',
+                  section.text_align === 'center' ? 'text-center' : ''
+                )}
+              >
                 {section.title}
               </h2>
             </ScrollAnimation>
-            <ScrollAnimation delay={0.2}>
-              <p className={cn("text-md text-muted-foreground my-6 text-balance break-words", section.text_align === "center" ? "text-center" : "")}>
+            <ScrollAnimation delay={0.3}>
+              <p
+                className={cn(
+                  'mt-6 text-lg text-balance text-slate-600 dark:text-slate-300',
+                  section.text_align === 'center' ? 'text-center' : ''
+                )}
+              >
                 {section.description}
               </p>
             </ScrollAnimation>
 
             {section.buttons && section.buttons.length > 0 && (
-              <ScrollAnimation delay={0.3}>
-                <div className="flex flex-wrap items-center justify-start gap-2">
+              <ScrollAnimation delay={0.4}>
+                <div className="mt-8 flex flex-wrap items-center justify-start gap-3">
                   {section.buttons?.map((button, idx) => (
                     <Button
                       asChild
@@ -60,9 +84,9 @@ export function FeaturesList({
                         href={button.url ?? ''}
                         target={button.target ?? '_self'}
                         className={cn(
-                          'focus-visible:ring-ring inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
-                          'h-9 px-4 py-2',
-                          'bg-background ring-foreground/10 hover:bg-muted/50 dark:ring-foreground/15 dark:hover:bg-muted/50 border border-transparent shadow-sm ring-1 shadow-black/15 duration-200'
+                          'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all focus-visible:ring-1 focus-visible:outline-none',
+                          'h-10 px-6',
+                          'border border-black/10 bg-white/80 text-slate-700 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.45)] backdrop-blur hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-white'
                         )}
                       >
                         {button.icon && (
@@ -78,20 +102,24 @@ export function FeaturesList({
           </div>
         </div>
 
-        <ScrollAnimation delay={0.1}>
-          {/* Prevent horizontal scrolling, min-w-0 and break-words */}
-          <div className="relative grid min-w-0 grid-cols-1 gap-x-3 gap-y-6 border-t pt-12 break-words sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+        <ScrollAnimation delay={0.15}>
+          <div className="relative grid min-w-0 grid-cols-1 gap-4 pt-6 break-words sm:grid-cols-2 lg:grid-cols-4">
             {section.items?.map((item, idx) => (
-              <div className="min-w-0 space-y-3 break-words" key={idx}>
-                <div className="flex min-w-0 items-center gap-2">
+              <div
+                className="min-w-0 space-y-3 rounded-2xl border border-black/5 bg-white/70 p-5 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.4)] backdrop-blur dark:border-white/10 dark:bg-white/5"
+                key={idx}
+              >
+                <div className="flex min-w-0 items-center gap-3 text-slate-800 dark:text-slate-100">
                   {item.icon && (
-                    <SmartIcon name={item.icon as string} size={16} />
+                    <span className="flex size-9 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900">
+                      <SmartIcon name={item.icon as string} size={16} />
+                    </span>
                   )}
-                  <h3 className="min-w-0 text-sm font-medium break-words">
+                  <h3 className="min-w-0 text-sm font-semibold break-words">
                     {item.title}
                   </h3>
                 </div>
-                <p className="text-muted-foreground min-w-0 text-sm break-words">
+                <p className="min-w-0 text-sm text-slate-600 dark:text-slate-300">
                   {item.description ?? ''}
                 </p>
               </div>
